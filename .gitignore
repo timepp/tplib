@@ -1,0 +1,14 @@
+*.suo
+*.swp
+*.ncb
+*.log
+*.pdb
+*.ilk
+*.aps
+Debug/
+Release/
+ipch/
+*.sdf
+*.opensdf
+*.vcproj.*.user
+*.vcxproj.user
