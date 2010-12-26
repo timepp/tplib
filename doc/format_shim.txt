@@ -1,28 +1,28 @@
-�����е�format_shim.h�Ǻ�ǰ��ʱ�䡰�Ҹ���˼�롱һ��ϵ�еĶ�����
-��AManJiang����������cfmt�ṩջ�Ϸ����ڴ�ĺͶ��Ϸ����ڴ�����ѡ�񣬻���˸��õĿɶ����ԡ�����һ����������format shim�ĸ��������һ��shim: hex_dumper
-�����ۣ��������߽���
+附件中的format_shim.h是和前段时间“幸福的思想”一个系列的东西。
+受AManJiang的启发，对cfmt提供栈上分配内存的和堆上分配内存两种选择，获得了更好的可定制性。更进一步，提炼出format shim的概念并加入另一种shim: hex_dumper
+请讨论，批评或者建议
 
-�ȿ�������ͼ�� 
-������
+先看附件中图。 
+。。。
 
-��νformat shim����������֣��ǿ����Զ�ת�����ַ���ָ��Ķ�������Ҫ�ַ���ָ��ĵط���ʹ��һ��in-place����ʱ������棬�������ʱ����Ĺ��캯������ַ������и�ʽ����
-�����Ĵ�������գ��̰߳�ȫ��������������������ʱ��������format-shimѡ����ջ�Ϲ���ʱ��û���κζ���Ŀ�����
+所谓format shim是我起的名字，是可以自动转换成字符串指针的对象。在需要字符串指针的地方，使用一个in-place的临时对象代替，在这个临时对象的构造函数里对字符串进行格式化。
+这样的代码更紧凑，线程安全，并且消除了命名的临时变量。当format-shim选择在栈上构造时，没有任何额外的开销。
 
-����ͷ�ļ��а���������format shim
-1. cfmt �ṩ�˸�ʽ����������������Ҫ���ַ����ĵط���in-place����һ��cfmt����printf��ʽ���﷨ƴ��.����cfmt��sprintf�Ͳ���Ҫ��ʹ���ˡ�
-2. hex_dump �ṩ�˶��ڴ����ݵ�dump��ͬ������Ҫ���ַ����ĵط�
-format chim���ڿɱ�����б��Ĳ���ʱ��Ӧ������ʱ����Ķ���ǰ���&ȡ��ַ��������ȻҲ������VC�±������У������ǲ���C++��׼��
+附件头文件中包含了两个format shim
+1. cfmt 提供了格式化适配器，可以在要求字符串的地方，in-place构造一个cfmt，以printf样式的语法拼串.有了cfmt，sprintf就不需要再使用了。
+2. hex_dump 提供了对内存内容的dump，同样用在要求字符串的地方
+format chim用于可变参数列表的参数时，应该在临时构造的对象前面加&取地址，否则虽然也可以在VC下编译运行，但是是不合C++标准的
 
-���е�cfmt�ṩ����һ������ĺô����������ͼƬ�е�log��˵��Ϊ��֧��printf��ʽ��ԭ���Ľӿ���log(int, const char *, ...)��
-����cfmt��log�Ľӿڲ���Ҫ�ٿ��ǿɱ�����������log(int, const char*)
+其中的cfmt提供了另一个额外的好处，比如对于图片中的log来说，为了支持printf样式，原来的接口是log(int, const char *, ...)，
+有了cfmt，log的接口不需要再考虑可变参数，变成了log(int, const char*)
 
-��ͼƬ�еĴ���
+对图片中的代码
 cz == cfmt<char>
 scz == cfmt<char, 0>
 hex_dump == hex_dumper<char>
 safe_hex_dump == hex_dumper<char, 0>
 
-���Դ�format_shim�������Լ���format shim��
+可以从format_shim类派生自己的format shim。
 
-ע�⣺����io������VC���еģ�*nix��Ҳ�ж�Ӧ�ĺ������������ֲ�һ��
-ע�⣺cfmtʹ���˿ɱ�����ĺ������ɱ�����ĺ����޷���֤���Ͱ�ȫ���������Ͱ�ȫ��cfmt�����������AManJiang�ķ��ġ���һ���Ҹ���˼�룬���汾����
+注意：部分io函数是VC特有的，*nix上也有对应的函数，但是名字不一样
+注意：cfmt使用了可变参数的函数，可变参数的函数无法保证类型安全。对于类型安全的cfmt，请版面搜索AManJiang的发文“另一个幸福的思想，流版本”。
