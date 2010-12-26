@@ -48,11 +48,16 @@ namespace tp
 	{
 		std::wstring oplist;
 		std::wstring message;
-		std::auto_ptr<tp::error> err;
+		mutable std::auto_ptr<tp::error> err;
 
 		explicit exception(error* e, const wchar_t* msg = 0) : err(e), oplist(CURRENT_OPLIST())
 		{
 			if (msg) message = msg;
+		}
+
+		exception(const exception& e) : oplist(e.oplist), message(e.message), err(e.err)
+		{
+
 		}
 	};
 

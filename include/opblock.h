@@ -54,10 +54,10 @@ namespace tp
 				const strlist_t* oplist = it->second;
 				if (oplist)
 				{
-					for (strlist_t::const_iterator it = oplist->begin(); it != oplist->end(); ++it)
+					for (strlist_t::const_iterator it2 = oplist->begin(); it2 != oplist->end(); ++it2)
 					{
 						if (!lstr.empty()) lstr += sep;
-						lstr += *it;
+						lstr += *it2;
 					}
 				}
 			}
