@@ -40,7 +40,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/Wall"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(SolutionDir)\..\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;TP_LOG_THREAD"
@@ -48,6 +47,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
+				WarningLevel="4"
 				DebugInformationFormat="4"
 				EnablePREfast="true"
 			/>
@@ -273,26 +273,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-		</Filter>
-		<Filter
-			Name="scripts"
-			>
-			<File
-				RelativePath="..\script\common.js"
-				>
-			</File>
-			<File
-				RelativePath="..\script\envswitch.hta"
-				>
-			</File>
-			<File
-				RelativePath="..\script\precheck.hta"
-				>
-			</File>
-			<File
-				RelativePath="..\script\xlogview.hta"
-				>
-			</File>
 		</Filter>
 		<File
 			RelativePath=".\ClassDiagram2.cd"
