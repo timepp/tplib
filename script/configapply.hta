@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>软件环境配置工具</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+    <hta:application id="thisHTA" icon="irftp.exe"></hta:application>
+    <style type="text/css">
+        .logwin
+        {
+            padding-left: 5px;
+            font-family: 宋体, monospace;
+            font-size: small;
+            border: thin solid deepskyblue;
+            overflow: auto;
+        }
+        .taskcell
+        {
+            cursor: hand;
+            font-family: 宋体, monospace;
+        }
+        #task_table
+        {
+            width: 100%;
+        }
+        #log_hdr
+        {
+            top-margin: 10px;
+        }
+        html, body
+        {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            border: none;
+        }
+    </style>
+    <script type="text/javascript" src="common.js"></script>
+    <script type="text/javascript" src="task.js"></script>
+    <script type="text/javascript">
+
+        if (ElevatePrivilege(thisHTA.commandLine)) body.onload = null;
+
+        var G = new Object;
+        var ops = new Array;
+
+        function Init() {
+
+            InitGlobals();
+
+            InitTasks();
+
+            var tc = document.getElementById("task_c");
+            for (var i = 0; i < ops.length; i++) {
+                var op = ops[i];
+                var cell = document.createElement("span");
+                cell.innerText = op.name;
+                cell.className = "taskcell";
+                tc.appendChild(cell);
+                if (G.UI.max_cellwidth < cell.offsetWidth) G.UI.max_cellwidth = cell.offsetWidth;
+                tc.removeChild(cell);
+                op.status = false;
+            }
+
+            window.onresize = OnWindowResize;
+            OnWindowResize();
+
+            Log("配置目录：" + G.path_conf);
+            Log("用户名：" + G.login_name);
+            for (var i = 0; i < ops.length; i++) {
+                var op = ops[i];
+                try {
+                    if (op.hasOwnProperty("init")) op.init();
+                    if (op.hasOwnProperty("check")) op.status = op.check();
+                    MarkStatus(op.cell, op.status);
+                }
+                catch (e) {
+                    var msg = e;
+                    if (e.hasOwnProperty("message")) msg = e.message;
+                    Log("[$T]: 任务检查失败：$M".replace("$T", op.name).replace("$M", msg));
+                }
+            }
+
+            AddGradientBK(document.getElementById("log_hdr"), "deepskyblue", "#FFFFFF");
+        }
+
+        function InitGlobals() {
+            G.cmdline = SplitCommandLine(thisHTA.commandLine);
+            G.path_conf = G.cmdline[0].replace(/^(.*?)\\+[^\\]*$/, "$1");
+            G.env = shell.Environment("Process");
+            G.user_name = G.env("USERNAME");
+            G.login_name = G.user_name;
+            for (var i = 0; i < G.cmdline.length; i++) {
+                if (G.cmdline[i].substr(0, 7) == "--user=") {
+                    G.login_name = G.cmdline[i].substr(7);
+                }
+                if (G.cmdline[i].substr(0, 5) == "--uac") {
+                    G.UAC = true;
+                }
+            }
+            G.path_autorun = shell.SpecialFolders("Startup");
+            G.path_autorun_alluser = shell.SpecialFolders("AllUsersStartup");
+            G.UI = new Object;
+            G.UI.max_cellwidth = 0;
+            G.UI.cell_columns = 0;
+        }
+
+        function OnWindowResize() {
+            RecalcLayout();
+        }
+
+        function RecalcLayout() {
+            var oLog = document.getElementById("log");
+            var tbl = document.getElementById("task_table");
+            var tbl_hdr = document.getElementById("log_hdr");
+            var cols = Math.floor(document.body.offsetWidth / G.UI.max_cellwidth);
+            if (cols < 1) cols = 1;
+            if (cols != G.UI.cell_columns) {
+                G.UI.cell_columns = cols;
+                ClearTable(tbl);
+
+                var rows = Math.ceil(ops.length / cols);
+                for (var i = 0; i < rows; i++) {
+                    var row = tbl.insertRow(-1);
+                    for (var j = 0; j < cols; j++) {
+                        if (j * rows + i >= ops.length) continue;
+                        var op = ops[j * rows + i];
+                        var cell = row.insertCell(-1);
+                        cell.appendChild(document.createTextNode(op.name));
+                        cell.className = "taskcell";
+                        cell.op = op;
+                        cell.style.width = G.UI.max_cellwidth;
+                        cell.onclick = OnTaskClick;
+                        op.cell = cell;
+                        MarkStatus(cell, op.status);
+                    }
+                }
+            }
+
+            var h = document.body.offsetHeight - tbl.offsetHeight - tbl_hdr.offsetHeight - 40;
+            if (h > 100) {
+                oLog.style.height = h;
+            }
+        }
+
+        function Log(text) {
+            var oLog = document.getElementById("log");
+            oLog.innerHTML += PlainTextToHTML(text);
+            if (text.charCodeAt(text.length - 1) != 10) {
+                oLog.innerHTML += "<br/>";
+            }
+            oLog.scrollTop += 1000000;
+        }
+        function ClearLog() {
+            document.getElementById("log").innerHTML = "";
+        }
+
+        function OnTaskClick() {
+            /*
+            有检测函数　　　　有执行函数　　　　任务状态　　　　动作
+            --------------------------------------------------------
+            ○　　　　　　　　○　　　　　　　　○　　　　　　　s=S1
+            ○　　　　　　　　○　　　　　　　　●　　　　　　　s=S2
+            ○　　　　　　　　●　　　　　　　　○　　　　　　　R,s=S3
+            ○　　　　　　　　●　　　　　　　　●　　　　　　　s=S2
+            ●　　　　　　　　○　　　　　　　　○　　　　　　　s=C
+            ●　　　　　　　　○　　　　　　　　●　　　　　　　s=C
+            ●　　　　　　　　●　　　　　　　　○　　　　　　　R,s=C
+            ●　　　　　　　　●　　　　　　　　●　　　　　　　s=C
+            --------------------------------------------------------
+            S1: 确认框：请手动操作，成功后点‘确定’
+            S2: 确认框：要重置该任务为未完成吗
+            S3: 确认框：该任务已执行，但是无法检测是否成功，请判断成功之后点‘确定’
+            R: 运行执行函数
+            C: 运行检测函数
+            */
+            function op_run(op) {
+                try { op.run(); } catch (e) {
+                    var msg = e;
+                    if (e.hasOwnProperty("message")) msg = e.message;
+                    Log("[$T]: 任务执行失败：$M".replace("$T", op.name).replace("$M", msg));
+                }
+            }
+            function op_check(op) {
+                try { return op.check(); } catch (e) {
+                    var msg = e;
+                    if (e.hasOwnProperty("message")) msg = e.message;
+                    Log("[$T]: 任务检查失败：$M".replace("$T", op.name).replace("$M", msg));
+                    return false;
+                }
+            }
+
+            var cell = window.event.srcElement;
+            var op = cell.op;
+            var has_chk_method = op.hasOwnProperty("check");
+            var has_run_method = op.hasOwnProperty("run");
+            if (has_chk_method) {
+                if (has_run_method) {
+                    op_run(op);
+                }
+                op.status = op_check(op);
+            }
+            else {
+                if (op.status) {
+                    if (confirm("要重置该任务为未完成吗？")) op.status = false;
+                }
+                else {
+                    if (has_run_method) {
+                        op_run(op);
+                        op.status = confirm("任务已执行，但是无法检测是否成功，请判断成功之后点‘确定’");
+                    }
+                    else {
+                        op.status = confirm("该任务目前无法自动完成\n请手动操作，在成功 $T 之后点击'确定'".replace("$T", op.name));
+                    }
+                }
+            }
+
+            MarkStatus(cell, cell.op.status);
+        }
+
+        function MarkStatus(o, c) { AddGradientBK(o, c ? "#CCFFCC" : "#FFCCCC"); }
+
+    </script>
+</head>
+<body onload="Init()" onkeydown="if (event.keyCode == 27) window.close()">
+    <table id="frame_tbl" style="width: 100%;">
+        <tr>
+            <td id="task_c">
+                <table id="task_table">
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 20px;">
+            </td>
+        </tr>
+        <tr>
+            <td id="log_hdr">
+                操作日志
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id="log" class="logwin">
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

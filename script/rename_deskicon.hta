@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>桌面图标改名工具</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="MSThemeCompatible" content="Yes">
+    <script type="text/javascript" src="common.js"></script>
+    <script language="javascript">
+        ResizeWindow(700, 300, true);
+    </script>
+    <hta:application id="RenameIcon" scroll="no" icon="explorer.exe" />
+    <style type="text/css">
+        input { width: 90%; }
+        textarea { width: 100%; word-break:break-all;}
+        button { width: 100px; }
+        .ref { color:blue;　cursor:hand; }
+        .em { color:green; }
+        .warning { color:red; }
+    </style>
+    <script language="javascript">
+        var shell = new ActiveXObject("WScript.Shell");
+        var shellapp = new ActiveXObject("Shell.Application");
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var oHTA = Item("RenameIcon");
+        var desktopSelf = shellapp.Namespace(0x10).Self.Path;
+        var desktopAll = shellapp.Namespace(0x19).Self.Path;
+
+        function Item(t) {
+            return document.getElementById(t);
+        }
+        function Run() {
+            Rename(desktopSelf);
+            Rename(desktopAll);
+            alert("改名成功");
+        }
+        function Rename(path) {
+            var fc = new Enumerator(fso.GetFolder(path).files);
+            for (var n = 0; !fc.atEnd(); fc.moveNext()) {
+                var f = fc.item();
+                if (f.Name.match(/^.*\.lnk$/)) {
+                    try {
+                        fso.MoveFile(f.Path, path + "\\rename_temp" + n + ".lnk");
+                    } catch (e) { }
+                    n++;
+                }
+            }
+
+            fc = new Enumerator(fso.GetFolder(path).files);
+            for (var n = 0; !fc.atEnd(); fc.moveNext()) {
+                var f = fc.item();
+                if (f.Name.match(/^.*\.lnk$/)) {
+                    fso.MoveFile(f.Path, path + "\\" + BinCode(n, " 　") + ".lnk");
+                    n++;
+                }
+            }
+        }
+        function EditSelf() {
+            shell.Run("notepad " + oHTA.commandLine);
+        }
+        function OpenPath(path) {
+            shell.Run("explorer.exe " + path);
+        }
+        function BinCode(n, chars) {
+            var code = "";
+            var m = chars.length;
+            do {
+                code += chars.charAt(n % m);
+                n = Math.floor(n / m);
+            } while (n > 0);
+            return code;
+        }
+    </script>
+</head>
+<body onkeydown="if (event.keyCode == 27) window.close()">
+    <button onclick="Run()">
+        开始改名</button>
+    <br />
+    <br />
+    <hr />
+    说明：<br />
+    <a href="#" onclick="EditSelf()">本程序</a>用于把桌面上的图标改名成空，喜欢桌面清爽的可以试试。<br />
+    本程序把<a href="#" onclick="OpenPath(desktopSelf)">用户桌面</a>和<a href="#" onclick="OpenPath(desktopAll)">共享桌面</a>目录下的所有.lnk文件的名字改为中文空格和英文空格的组合。<br />
+    <br />
+    如果你有其他更高级的需求，可以直接使用记事本打开本程序进行修改。<br />
+    <span class="warning">注意：只会更改桌面上的快捷方式文件(.lnk)，其他文件不会被改名。</span><br />
+    <span class="warning">注意：改名之后无法还原为原来的名字，请谨慎使用。</span><br />
+</body>
+</html>
