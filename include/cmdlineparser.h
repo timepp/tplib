@@ -20,6 +20,11 @@ private:
 	strmap_t m_params;
 	strlist_t m_targets;
 
+	static bool is_white_space(wchar_t ch)
+	{
+		return ch == L' ' || ch == L'\t' || ch == L'\r' || ch == L'\n';
+	}
+
 public:
 	bool parse(const wchar_t* cmd_line)
 	{
@@ -49,9 +54,10 @@ public:
 					continue;
 				}
 
-				if (q[0] == L' ' && !in_quote)
+				if (is_white_space(q[0]) && !in_quote)
 				{
 					p = q+1;
+					while (is_white_space(*p)) p++;
 					break;
 				}
 
