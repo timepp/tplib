@@ -13,8 +13,8 @@
    ON_LEAVE_1(fclose(fp), FILE*, fp);
 
  @ref
-   scope guard in D language: http://www.digitalmars.com/d/2.0/statement.html#ScopeGuardStatement
-   boost scope exit: http://www.google.com/#q=boost+scope+exit
+   - scope guard in D language: http://www.digitalmars.com/d/2.0/statement.html#ScopeGuardStatement
+   - boost scope exit: http://www.google.com/#q=boost+scope+exit
  @note
    It will become more elegant in C++0X
  */
