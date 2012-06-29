@@ -96,6 +96,10 @@ namespace tp
 			throw tp::exception(new tp::error_custom(msg));
 		}
 	}
+	inline void throw_custom_error(const wchar_t* msg)
+	{
+		throw tp::exception(new tp::error_custom(msg));
+	}
 	
 }
 

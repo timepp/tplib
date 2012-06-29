@@ -12,6 +12,8 @@
 #define OPBLOCK(x) SETOP(L"");tp::opblock CONCAT(opblk,__LINE__)(x)
 #define CURRENT_OPLIST() tp::service<tp::opmgr>::instance().get_oplist(L" -> ")
 
+#define SET_LONG_OP(x) tp::service<tp::opmgr>::instance().set_op(x, true)
+
 namespace tp
 {
 	class opmgr
@@ -41,9 +43,13 @@ namespace tp
 				oplist->pop_back();
 			}
 		}
-		void set_op(const std::wstring& op)
+		void set_op(const std::wstring& op, bool display = false)
 		{
 			m_op = op;
+			if (display)
+			{
+				wprintf(L"%s...\n", op.c_str());
+			}
 		}
 		std::wstring get_oplist(const std::wstring& sep) const
 		{
