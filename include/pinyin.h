@@ -24,18 +24,22 @@ public:
 	{
 		std::wstring ret;
 		ret.reserve(wcslen(s) * 5);
+		enum {lct_none, lct_chinese, lct_other} last_char_type = lct_none;
 		while (*s)
 		{
 			wchar_t ch = *s++;
 			const wchar_t* py = pinyin_of_char(ch);
 			if (*py)
 			{
+				if (last_char_type != lct_none) ret += L' ';
 				ret += py;
-				ret += L' ';
+				last_char_type = lct_chinese;
 			}
 			else
 			{
+				if (last_char_type == lct_chinese) ret += L' ';
 				ret += ch;
+				last_char_type = lct_other;
 			}
 		}
 		return ret;
@@ -1828,7 +1832,7 @@ private:
 			/*9F60*/ 331,   182,   182,   42,    269,   355,   371,   227,   144,   368,   49,    165,   376,   42,    370,   223,   
 			/*9F70*/ 385,   411,   268,   379,   366,   376,   80,    348,   370,   49,    411,   68,    42,    141,   364,   39,    
 			/*9F80*/ 37,    119,   371,   145,   182,   245,   331,   409,   371,   376,   49,    268,   348,   196,   244,   104,   
-			/*9F90*/ 244,   366,   184,   184,   104,   154,   321,   182,   321,   196,   104,   151,   267,   267,   17,    267,   
+			/*9F90*/ 244,   366,   184,   184,   104,   154,   321,   182,   321,   196,   104,   151,   267,   267,   17,    111,   
 			/*9FA0*/ 378,   47,    134,   147,   355,   
 		};
 		m_char_tbl = table;
