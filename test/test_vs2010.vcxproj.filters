@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="tplib">
+      <UniqueIdentifier>{fab411d1-53c8-49d5-8e5f-1e71b818b2d0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\pinyin.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\exception.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\opblock.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cmdlineparser.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\unittest.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cfgreader.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\auto_release.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\util_win.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\algorithm.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\oss_win.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\log_context.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tplib.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\log_device.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\log.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\lock.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\format_shim.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\defs.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\service.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\oss.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\api_wrapper.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\base64_codec.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\format_shim_base.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\msg_crack.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tstring.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
