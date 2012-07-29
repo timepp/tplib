@@ -14,16 +14,19 @@
     <ProjectGuid>{680642F7-38EC-4D23-9B0B-0EE2F4E91885}</ProjectGuid>
     <RootNamespace>test</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VSVersion)' == '' and $(VisualStudioVersion) == ''">$(VCTargetsPath11)</VCTargetsPath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -62,7 +65,6 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -99,6 +101,32 @@
       <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessToFile>
       <PreprocessSuppressLineNumbers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessSuppressLineNumbers>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\algorithm.h" />
+    <ClInclude Include="..\include\api_wrapper.h" />
+    <ClInclude Include="..\include\auto_release.h" />
+    <ClInclude Include="..\include\base64_codec.h" />
+    <ClInclude Include="..\include\cfgreader.h" />
+    <ClInclude Include="..\include\cmdlineparser.h" />
+    <ClInclude Include="..\include\defs.h" />
+    <ClInclude Include="..\include\exception.h" />
+    <ClInclude Include="..\include\format_shim.h" />
+    <ClInclude Include="..\include\format_shim_base.h" />
+    <ClInclude Include="..\include\lock.h" />
+    <ClInclude Include="..\include\log.h" />
+    <ClInclude Include="..\include\log_context.h" />
+    <ClInclude Include="..\include\log_device.h" />
+    <ClInclude Include="..\include\msg_crack.h" />
+    <ClInclude Include="..\include\opblock.h" />
+    <ClInclude Include="..\include\oss.h" />
+    <ClInclude Include="..\include\oss_win.h" />
+    <ClInclude Include="..\include\pinyin.h" />
+    <ClInclude Include="..\include\service.h" />
+    <ClInclude Include="..\include\tplib.h" />
+    <ClInclude Include="..\include\tstring.h" />
+    <ClInclude Include="..\include\unittest.h" />
+    <ClInclude Include="..\include\util_win.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
