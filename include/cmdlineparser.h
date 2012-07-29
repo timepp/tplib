@@ -59,6 +59,7 @@ private:
 			}
 		}
 		throw_custom_error(cz(L"无效的选项[%s]", opt));
+		return NULL;
 	}
 
 	const option_info* get_option_info(const wchar_t* opt) const
@@ -112,6 +113,11 @@ public:
 	{
 		option_info oi(short_name, long_name, false, param_type_bool, value_addr);
 		m_options.push_back(oi);
+	}
+	void clean()
+	{
+		m_options.clear();
+		m_targets.clear();
 	}
 
 	//! parse from command line
@@ -172,7 +178,9 @@ public:
 		int i = 0;
 		for (strlist_t::const_iterator it = param_list.begin(); it != param_list.end(); ++it)
 		{
-			argv[i++] = it->c_str();
+			if (i < argc)
+				argv[i] = it->c_str();
+			i++;
 		}
 
 		parse(argc, argv);
@@ -181,6 +189,15 @@ public:
 	//! parse from main()'s argc and argv
 	void parse(size_t argc, const wchar_t* const * argv)
 	{
+		// clean previous results
+		{
+			m_targets.clear();
+			for (options_t::iterator it = m_options.begin(); it != m_options.end(); ++it)
+			{
+				it->option_position = -1;
+			}
+		}
+
 		bool in_targets = false;
 		for (size_t i = 1; i < argc; i++)
 		{
