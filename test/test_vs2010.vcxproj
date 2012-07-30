@@ -109,6 +109,7 @@
     <ClInclude Include="..\include\base64_codec.h" />
     <ClInclude Include="..\include\cfgreader.h" />
     <ClInclude Include="..\include\cmdlineparser.h" />
+    <ClInclude Include="..\include\convert.h" />
     <ClInclude Include="..\include\defs.h" />
     <ClInclude Include="..\include\exception.h" />
     <ClInclude Include="..\include\format_shim.h" />
