@@ -163,17 +163,21 @@ namespace tp
 #define TPUT_NAME(prefix) TPUT_CONCAT(TPUT_CONCAT(prefix, _),__LINE__)
 
 
-#define TPUT_EXPECT(statement)          \
+#define TPUT_EXPECT(statement, msg)          \
 	do {                                \
-		bool ret = (statement);         \
-		const wchar_t* op = TPUT_WIDESTRING(#statement); \
-		tp::unittest::instance().check(ret, op);   \
+		bool ret___ = (statement);         \
+		const wchar_t* op___ = msg? msg : TPUT_WIDESTRING(#statement); \
+		tp::unittest::instance().check(ret___, op___);   \
 	} while (0);
 
-#define TPUT_EXPECT_WITH_MSG(statement, msg)          \
-	do {                                \
-	bool ret__ = (statement);         \
-	tp::unittest::instance().check(ret__, msg);   \
+#define TPUT_EXPECT_EXCEPTION(statement, exception_type, msg) \
+	do { \
+		std::wstring op___ = msg? msg: std::wstring(TPUT_WIDESTRING(#statement)) + L" --throw-> " + TPUT_WIDESTRING(#exception_type); \
+		bool exception_thrown___ = false; \
+		try { statement; } catch (exception_type&) { \
+			exception_thrown___ = true; \
+		} \
+		tp::unittest::instance().check(exception_thrown___, op___.c_str()); \
 	} while (0);
 
 #define TPUT_REGISTER_BLOCK(f, name, tags) \

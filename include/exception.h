@@ -12,52 +12,44 @@
 
 namespace tp
 {
-	struct error
-	{
-		virtual std::wstring desc() const = 0;
-		virtual ~error() {}
-	};
-	struct error_win : public error
-	{
-		error_win(DWORD e) : errcode(e) {}
-		DWORD errcode;
-		virtual std::wstring desc() const { return std::wstring(tp::edwin(errcode)); }
-	};
-	struct error_std : public error
-	{
-		error_std(int e) : errcode(e) {}
-		int errcode;
-		virtual std::wstring desc() const { return std::wstring(tp::edstd(errcode)); }
-	};
-	struct error_com : public error
-	{
-		error_com(HRESULT e) : errcode(e) {}
-		HRESULT errcode;
-		virtual std::wstring desc() const { return std::wstring(tp::edcom(errcode)); }
-	};
-
-	struct error_custom : public error
-	{
-		error_custom(const wchar_t* msg) : message(msg) {}
-		std::wstring message;
-		virtual std::wstring desc() const { return message; }
-	};
-
-
+	//! general exception
 	struct exception
 	{
 		std::wstring oplist;
 		std::wstring message;
-		mutable std::auto_ptr<tp::error> err;
 
-		explicit exception(error* e, const wchar_t* msg = 0) : err(e), oplist(CURRENT_OPLIST())
+		explicit exception(const wchar_t* msg = 0) : oplist(CURRENT_OPLIST())
 		{
 			if (msg) message = msg;
 		}
 
-		exception(const exception& e) : oplist(e.oplist), message(e.message), err(e.err)
+		exception(const exception& e) : oplist(e.oplist), message(e.message)
 		{
+		}
+	};
 
+	struct win_exception : public exception
+	{
+		DWORD errorcode;
+		win_exception(DWORD e) : errorcode(e)
+		{
+			message = tp::edwin(errorcode);
+		}
+	};
+	struct com_exception : public exception
+	{
+		HRESULT ret;
+		com_exception(HRESULT e) : ret(e)
+		{
+			message = tp::edcom(ret);
+		}
+	};
+	struct dos_exception : public exception
+	{
+		int errorcode;
+		dos_exception(int e) : errorcode(e)
+		{
+			message = tp::edstd(errorcode);
 		}
 	};
 
@@ -65,40 +57,29 @@ namespace tp
 	{
 		if (cond) 
 		{
-			throw tp::exception(new tp::error_win(GetLastError()));
-		}
-	}
-	inline void throw_if_lasterror(LONG err)
-	{
-		if (err != 0)
-		{
-			throw tp::exception(new tp::error_win(err));
+			throw tp::win_exception(GetLastError());
 		}
 	}
 	inline void throw_stderr_when(bool cond)
 	{
 		if (cond)
 		{
-			throw tp::exception(new tp::error_std(errno));
+			throw tp::dos_exception(errno);
 		}
 	}
 	inline void throw_when_fail(HRESULT hr)
 	{
 		if (FAILED(hr))
 		{
-			throw tp::exception(new tp::error_com(hr));
+			throw tp::com_exception(hr);
 		}
 	}
 	inline void throw_when(bool cond, const wchar_t* msg)
 	{
 		if (cond)
 		{
-			throw tp::exception(new tp::error_custom(msg));
+			throw tp::exception(msg);
 		}
-	}
-	inline void throw_custom_error(const wchar_t* msg)
-	{
-		throw tp::exception(new tp::error_custom(msg));
 	}
 	
 }

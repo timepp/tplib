@@ -5,6 +5,7 @@
 #include "./auto_release.h"
 #include "./exception.h"
 #include "./format_shim.h"
+#include "./convert.h"
 
 
 namespace tp
@@ -16,6 +17,24 @@ public:
 	typedef std::list<std::wstring> strlist_t;
 	enum param_type_t {param_type_int, param_type_bool, param_type_string};
 
+	// EXCEPTIONs
+	struct invalid_option : public tp::exception
+	{
+		std::wstring opt;
+		explicit invalid_option(const std::wstring& p): opt(p)
+		{
+			message = opt + L": Invalid option";
+		}
+	};
+	struct missing_option_value : public tp::exception
+	{
+		std::wstring opt;
+		explicit missing_option_value(const std::wstring& p) : opt(p)
+		{
+			message = opt + L": Missing option value";
+		}
+	};
+
 private:
 	struct option_info
 	{
@@ -26,7 +45,7 @@ private:
 		param_type_t param_type;
 		void* value_receiver;
 
-		int option_position;                   // 选项在命令行出现的顺序，-1表示选项不存在
+		int option_position;                   // The Option's position in command line, -1 indicates this option does not exists
 		int param_value_int;
 		bool param_value_bool;
 		std::wstring param_value_string;
@@ -58,7 +77,7 @@ private:
 				return &(*it);
 			}
 		}
-		throw_custom_error(cz(L"无效的选项[%s]", opt));
+		throw invalid_option(opt);
 		return NULL;
 	}
 
@@ -77,9 +96,10 @@ private:
 	void save_option(const wchar_t* opt, const wchar_t* buffer)
 	{
 		option_info* oi = get_option_info(opt);
+		oi->param_value_string = buffer;
+
 		if (oi->param_type == param_type_string)
 		{
-			oi->param_value_string = buffer;
 			if (oi->value_receiver)
 			{
 				*(std::wstring*)oi->value_receiver = oi->param_value_string;
@@ -87,7 +107,7 @@ private:
 		}
 		else if (oi->param_type == param_type_int)
 		{
-			oi->param_value_int = _wtoi(buffer);
+			oi->param_value_int = tp::cvt::to_int(buffer);
 			if (oi->value_receiver)
 			{
 				*(int*)oi->value_receiver = oi->param_value_int;
@@ -95,7 +115,7 @@ private:
 		}
 		else if (oi->param_type == param_type_bool)
 		{
-			oi->param_value_bool = _wtoi(buffer)? true : false;
+			oi->param_value_bool = tp::cvt::to_bool(buffer);
 			if (oi->value_receiver)
 			{
 				*(bool*)oi->value_receiver = oi->param_value_bool;
@@ -125,8 +145,8 @@ public:
 	//! aaa.exe --value=cc -hls -t "c d e" -- -fffc.txt
 	void parse(const wchar_t* cmd_line)
 	{
-		/** windows下对命令行的处理：参数中间有空格时，可以用引号引起来。这样就有一个如何表示引号的问题。
-		 *  使用\"来表示"。\如果在引号之前，表示那是一个普通引号。\在其它位置保持其本意
+		/** If an option value contains spaces, it must be double-quoted.  
+		 *  Double-quotes in option value is encoded with `\"'.
 		 */
 		strlist_t param_list;
 		const wchar_t * p = cmd_line;
@@ -208,7 +228,7 @@ public:
 				m_targets.push_back(arg);
 				continue;
 			}
-			if (arg[1] == '-' && !arg[2]) // -- 后是targets
+			if (arg[1] == '-' && !arg[2]) // after `--', everything become `target'
 			{
 				in_targets = true;
 				continue;
@@ -216,7 +236,7 @@ public:
 
 			if (arg[1] == '-')
 			{
-				// 两个减号
+				// --opt
 				const wchar_t *p = wcschr(arg, L'=');
 				if (p != NULL)
 				{
@@ -236,7 +256,7 @@ public:
 						}
 						else
 						{
-							throw_custom_error(cz(L"选项[%s]缺少参数", param.c_str()));
+							throw missing_option_value(param);
 						}
 					}
 					else
@@ -247,7 +267,7 @@ public:
 			}
 			else
 			{
-				// 一个减号
+				// -o
 				for (const wchar_t * p = arg + 1; *p; p++)
 				{
 					std::wstring param = std::wstring(1, *p);
@@ -260,13 +280,13 @@ public:
 					{
 						if (p[1])
 						{
-							throw_custom_error(cz(L"选项[%s]缺少参数", param.c_str()));
+							throw missing_option_value(param);
 						}
 						else
 						{
 							if (i + 1 >= argc)
 							{
-								throw_custom_error(cz(L"选项[%s]缺少参数", param.c_str()));
+								throw missing_option_value(param);
 							}
 							else
 							{
@@ -289,12 +309,28 @@ public:
 	int get_option(const wchar_t* option, int default_value) const
 	{
 		const option_info* oi = get_option_info(option);
-		return oi? oi->param_value_int : default_value;
+		if (!oi) return default_value;
+		if (oi->param_type == param_type_int)
+		{
+			return oi->param_value_int;
+		}
+		else
+		{
+			return tp::cvt::to_int(oi->param_value_string);
+		}
 	}
 	bool get_option(const wchar_t* option, bool default_value) const
 	{
 		const option_info* oi = get_option_info(option);
-		return oi? oi->param_value_bool : default_value;
+		if (!oi) return default_value;
+		if (oi->param_type == param_type_bool)
+		{
+			return oi->param_value_bool;
+		}
+		else
+		{
+			return tp::cvt::to_bool(oi->param_value_string);
+		}
 	}
 
 	bool option_exists(const wchar_t* opt) const
