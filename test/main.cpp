@@ -11,6 +11,12 @@
 
 #define TPUT_MODNAME Main
 
+TPUT_DEFINE_BLOCK(L"format_shim", L"")
+{
+	TPUT_EXPECT(wcscmp(L"abc123", tp::cz(L"ab%c%d", L'c', 123)) == 0, NULL);
+	TPUT_EXPECT(wcscmp(L"中国人", tp::a2w("中国人", 936)) == 0, NULL);
+}
+
 TPUT_DEFINE_BLOCK(L"pinyin", L"")
 {
 	tp::pinyintool pyt;
@@ -44,6 +50,11 @@ TPUT_DEFINE_BLOCK(L"commandline parser", L"")
 		TPUT_EXPECT(parser.get_option(L"f", L"") == L"123", L"正确获取未绑定选项的值");
 		TPUT_EXPECT(parser.get_option(L"s", false) == true, L"正确获取绑定选项的值");
 		TPUT_EXPECT(parser.get_option(L"f", 100) == 123, L"获取其他类型选项时进行正确转换");
+
+		std::wstring t;
+		parser.register_option(L"t", L"time", tp::cmdline_parser::param_type_string, &t);
+		parser.parse(L"a.exe --time=abcde -t 193");
+		TPUT_EXPECT(t == L"193", L"后面的同名选项覆盖前面的选项");
 		
 	} catch (...)
 	{
