@@ -72,15 +72,14 @@
     <ClInclude Include="..\include\base64_codec.h">
       <Filter>tplib</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\format_shim_base.h">
-      <Filter>tplib</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\msg_crack.h">
       <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\tstring.h">
       <Filter>tplib</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\convert.h" />
+    <ClInclude Include="..\include\convert.h">
+      <Filter>tplib</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

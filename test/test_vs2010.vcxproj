@@ -113,7 +113,6 @@
     <ClInclude Include="..\include\defs.h" />
     <ClInclude Include="..\include\exception.h" />
     <ClInclude Include="..\include\format_shim.h" />
-    <ClInclude Include="..\include\format_shim_base.h" />
     <ClInclude Include="..\include\lock.h" />
     <ClInclude Include="..\include\log.h" />
     <ClInclude Include="..\include\log_context.h" />

@@ -12,3 +12,4 @@ ipch/
 *.opensdf
 *.vcproj.*.user
 *.vcxproj.user
+doc/html

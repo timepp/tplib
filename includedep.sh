@@ -7,7 +7,7 @@ if [[ ${2} == "showsys" ]]; then opt=--include=forceshow; fi
 dir=""
 for drive in e d
 do
-	dir=/$drive/greensoft/psoft
+	dir=/$drive/greensoft
 	if [ -d $dir ]; then break; fi
 done
 
