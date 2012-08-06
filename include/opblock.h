@@ -8,15 +8,15 @@
 #include "service.h"
 #include "defs.h"
 
-#define SETOP(x) tp::service<tp::opmgr>::instance().set_op(x)
+#define SETOP(x) tp::servicemgr::get<tp::opmgr>()->set_op(x)
 #define OPBLOCK(x) SETOP(L"");tp::opblock CONCAT(opblk,__LINE__)(x)
-#define CURRENT_OPLIST() tp::service<tp::opmgr>::instance().get_oplist(L" -> ")
+#define CURRENT_OPLIST() tp::servicemgr::get<tp::opmgr>()->get_oplist(L" -> ")
 
-#define SET_LONG_OP(x) tp::service<tp::opmgr>::instance().set_op(x, true)
+#define SET_LONG_OP(x) tp::servicemgr::get<tp::opmgr>()->set_op(x, true)
 
 namespace tp
 {
-	class opmgr
+	class opmgr : public service_impl<SID_OPMGR>
 	{
 		typedef std::list<std::wstring> strlist_t;
 		typedef std::map<threadid_t, strlist_t*> opmap_t;
@@ -90,16 +90,18 @@ namespace tp
 		}
 	};
 
+	DEFINE_SERVICE(opmgr, L"Operation Manager");
+
 	class opblock
 	{
 	public:
 		opblock(const std::wstring& op)
 		{
-			tp::service<opmgr>::instance().push_block(op);
+			servicemgr::get<opmgr>()->push_block(op);
 		}
 		~opblock()
 		{
-			tp::service<opmgr>::instance().pop_block();
+			servicemgr::get<opmgr>()->pop_block();
 		}
 	};
 }
