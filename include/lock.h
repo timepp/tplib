@@ -1,11 +1,9 @@
-#ifndef TP_LOG_H_INCLUDED
-#define TP_LOG_H_INCLUDED
+#pragma once
 
 #include <string.h>
 
 namespace tp
 {
-
 
 struct dummy_lock
 {
@@ -75,5 +73,3 @@ private:
 
 
 }
-
-#endif
