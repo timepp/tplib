@@ -1,6 +1,7 @@
 #ifndef TP_EXCEPTION_H_INCLUDED
 #define TP_EXCEPTION_H_INCLUDED
 
+#include "defs.h"
 #include "format_shim.h"
 #include "opblock.h"
 
@@ -13,22 +14,14 @@
 namespace tp
 {
 	//! general exception
-	struct exception
+	struct exception_with_oplist : public tp::exception
 	{
-		std::wstring oplist;
-		std::wstring message;
-
-		explicit exception(const wchar_t* msg = 0) : oplist(CURRENT_OPLIST())
-		{
-			if (msg) message = msg;
-		}
-
-		exception(const exception& e) : oplist(e.oplist), message(e.message)
+		explicit exception_with_oplist(const wchar_t* msg = L"") : tp::exception(CURRENT_OPLIST(), msg)
 		{
 		}
 	};
 
-	struct win_exception : public exception
+	struct win_exception : public exception_with_oplist
 	{
 		DWORD errorcode;
 		win_exception(DWORD e) : errorcode(e)
@@ -36,7 +29,7 @@ namespace tp
 			message = tp::edwin(errorcode);
 		}
 	};
-	struct com_exception : public exception
+	struct com_exception : public exception_with_oplist
 	{
 		HRESULT ret;
 		com_exception(HRESULT e) : ret(e)
@@ -44,7 +37,7 @@ namespace tp
 			message = tp::edcom(ret);
 		}
 	};
-	struct dos_exception : public exception
+	struct dos_exception : public exception_with_oplist
 	{
 		int errorcode;
 		dos_exception(int e) : errorcode(e)
@@ -78,7 +71,7 @@ namespace tp
 	{
 		if (cond)
 		{
-			throw tp::exception(msg);
+			throw tp::exception_with_oplist(msg);
 		}
 	}
 	

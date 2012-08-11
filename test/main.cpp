@@ -1,4 +1,4 @@
-#define _WIN32_WINNT 0x0501
+ï»¿#define _WIN32_WINNT 0x0501
 
 #include <windows.h>
 #include <tplib.h>
@@ -10,8 +10,30 @@
 #include <unittest.h>
 #include <auto_release.h>
 #include <service.h>
+#include <exception>
 
 #define TPUT_MODNAME Main
+
+enum
+{
+	SID_Service1 = 1,
+	SID_Service2
+};
+
+class reader : public tp::service_impl<SID_Service1>
+{
+public:
+	void setval(int val) { m_val = val; }
+	int getval() const { return m_val; }
+private:
+	int m_val;
+};
+class writer : public tp::service_impl<SID_Service2>
+{
+};
+
+DEFINE_SERVICE(reader, L"Reader");
+DEFINE_SERVICE(writer, L"Writer");
 
 TPUT_DEFINE_BLOCK(L"auto_release", L"")
 {
@@ -19,30 +41,30 @@ TPUT_DEFINE_BLOCK(L"auto_release", L"")
 
 	{
 		TP_SCOPE_EXIT { result += L"tse1 "; };
-		TPUT_EXPECT(result == L"", L"×¢²áscope guardÖ®ºó£¬²»»áÁ¢¿ÌÖ´ĞĞ");
+		TPUT_EXPECT(result == L"", L"æ³¨å†Œscope guardä¹‹åï¼Œä¸ä¼šç«‹åˆ»æ‰§è¡Œ");
 		TP_SCOPE_EXIT { result += L"tse2 "; };
 	}
-	TPUT_EXPECT(result == L"tse2 tse1 ", L"ÔÚ¿éÍË³öÊ±£¬scope guard°´ÕÕ×¢²áÏà·´µÄË³ĞòÔËĞĞ");
+	TPUT_EXPECT(result == L"tse2 tse1 ", L"åœ¨å—é€€å‡ºæ—¶ï¼Œscope guardæŒ‰ç…§æ³¨å†Œç›¸åçš„é¡ºåºè¿è¡Œ");
 
 	result = L"";
 	{
 		TP_SCOPE_EXIT { result += L"1"; }; TP_SCOPE_EXIT { result += L"2"; };
 	}
-	TPUT_EXPECT(result == L"21", L"scope guard¿ÉÒÔÔÚ´úÂëµÄÍ¬Ò»ĞĞ×¢²á");
+	TPUT_EXPECT(result == L"21", L"scope guardå¯ä»¥åœ¨ä»£ç çš„åŒä¸€è¡Œæ³¨å†Œ");
 }
 
 TPUT_DEFINE_BLOCK(L"format_shim", L"")
 {
 	TPUT_EXPECT(wcscmp(L"abc123", tp::cz(L"ab%c%d", L'c', 123)) == 0, NULL);
-	TPUT_EXPECT(wcscmp(L"ÖĞ¹úÈË", tp::a2w("ÖĞ¹úÈË", 936)) == 0, NULL);
+	TPUT_EXPECT(wcscmp(L"ä¸­å›½äºº", tp::a2w("ä¸­å›½äºº", 936)) == 0, NULL);
 }
 
 TPUT_DEFINE_BLOCK(L"pinyin", L"")
 {
 	tp::pinyintool pyt;
-	TPUT_EXPECT(pyt.pinyin_of_string(L"¹ê¹Ç·Û") == L"gui gu fen", NULL);
-	TPUT_EXPECT(pyt.pinyin_of_string(L"½ñÄêCPIÊÇ¶àÉÙ?") == L"jin nian CPI shi duo shao ?", NULL);
-	TPUT_EXPECT(pyt.pinyin_of_string(L"peachÊÇÌÒµÄÒâË¼") == L"peach shi tao di yi si", NULL);
+	TPUT_EXPECT(pyt.pinyin_of_string(L"é¾Ÿéª¨ç²‰") == L"gui gu fen", NULL);
+	TPUT_EXPECT(pyt.pinyin_of_string(L"ä»Šå¹´CPIæ˜¯å¤šå°‘?") == L"jin nian CPI shi duo shao ?", NULL);
+	TPUT_EXPECT(pyt.pinyin_of_string(L"peachæ˜¯æ¡ƒçš„æ„æ€") == L"peach shi tao di yi si", NULL);
 }
 
 TPUT_DEFINE_BLOCK(L"commandline parser", L"")
@@ -53,10 +75,10 @@ TPUT_DEFINE_BLOCK(L"commandline parser", L"")
 		tp::cmdline_parser parser;
 
 		parser.parse(L"");
-		TPUT_EXPECT(parser.get_targets().size() == 0, L"¿ÕÃüÁîĞĞ²ÎÊı");
+		TPUT_EXPECT(parser.get_targets().size() == 0, L"ç©ºå‘½ä»¤è¡Œå‚æ•°");
 
 		parser.parse(L"\"a b\".exe c ddd \"eee ffff\" ggg:hhh");
-		TPUT_EXPECT(parser.get_targets().size() == 4, L"ÃüÁîĞĞÖĞ´øÒıºÅ");
+		TPUT_EXPECT(parser.get_targets().size() == 4, L"å‘½ä»¤è¡Œä¸­å¸¦å¼•å·");
 
 		TPUT_EXPECT_EXCEPTION(parser.parse(L"a.exe -f"), tp::cmdline_parser::invalid_option, 0);
 
@@ -66,37 +88,56 @@ TPUT_DEFINE_BLOCK(L"commandline parser", L"")
 		TPUT_EXPECT_EXCEPTION(parser.parse(L"a.exe --file"), tp::cmdline_parser::missing_option_value, 0);
 
 		parser.parse(L"a.exe --file=123 -s");
-		TPUT_EXPECT(silent, L"ÕıÈ·°ó¶¨¿ª¹ØÑ¡Ïî");
-		TPUT_EXPECT(parser.get_option(L"f", L"") == L"123", L"ÕıÈ·»ñÈ¡Î´°ó¶¨Ñ¡ÏîµÄÖµ");
-		TPUT_EXPECT(parser.get_option(L"s", false) == true, L"ÕıÈ·»ñÈ¡°ó¶¨Ñ¡ÏîµÄÖµ");
-		TPUT_EXPECT(parser.get_option(L"f", 100) == 123, L"»ñÈ¡ÆäËûÀàĞÍÑ¡ÏîÊ±½øĞĞÕıÈ·×ª»»");
+		TPUT_EXPECT(silent, L"æ­£ç¡®ç»‘å®šå¼€å…³é€‰é¡¹");
+		TPUT_EXPECT(parser.get_option(L"f", L"") == L"123", L"æ­£ç¡®è·å–æœªç»‘å®šé€‰é¡¹çš„å€¼");
+		TPUT_EXPECT(parser.get_option(L"s", false) == true, L"æ­£ç¡®è·å–ç»‘å®šé€‰é¡¹çš„å€¼");
+		TPUT_EXPECT(parser.get_option(L"f", 100) == 123, L"è·å–å…¶ä»–ç±»å‹é€‰é¡¹æ—¶è¿›è¡Œæ­£ç¡®è½¬æ¢");
 
 		std::wstring t;
 		parser.register_option(L"t", L"time", tp::cmdline_parser::param_type_string, &t);
 		parser.parse(L"a.exe --time=abcde -t 193");
-		TPUT_EXPECT(t == L"193", L"ºóÃæµÄÍ¬ÃûÑ¡Ïî¸²¸ÇÇ°ÃæµÄÑ¡Ïî");
+		TPUT_EXPECT(t == L"193", L"åé¢çš„åŒåé€‰é¡¹è¦†ç›–å‰é¢çš„é€‰é¡¹");
 		
 	} catch (...)
 	{
 		unexpected_exception = true;
 	}
 
-	TPUT_EXPECT(!unexpected_exception, L"²»Ó¦¸ÃÓĞÎ´ÆÚ´ıµÄexception");
+	TPUT_EXPECT(!unexpected_exception, L"ä¸åº”è¯¥æœ‰æœªæœŸå¾…çš„exception");
 }
 
-class reader : public tp::service_impl<5>
+/// service å¿…é¡»æ˜¯æœ€åä¸€ä¸ªtestcase
+TPUT_DEFINE_BLOCK(L"service", L"")
 {
-};
+	bool unexpected_exception = false;
+	try
+	{
 
-DEFINE_SERVICE(reader, L"Reader");
+		{
+			reader* r = tp::servicemgr::get<reader>();
+			r->setval(100);
+		}
+		{
+			reader* r = tp::servicemgr::get<reader>();
+			TPUT_EXPECT(r->getval() == 100, L"ç»servicemgrçš„getæ¥å£è¿”å›çš„æ˜¯åŒä¸€serviceå®ä¾‹");
+		}
+
+		TPUT_EXPECT_EXCEPTION(tp::servicemgr::instance().add_service_info(1000, NULL, NULL, NULL), tp::servicemgr::service_id_invalid, L"service_id è¶…å‡ºèŒƒå›´æ—¶æŠ›å¼‚å¸¸");
+
+		tp::servicemgr::instance().destroy_all_services();
+	
+	} catch (...)
+	{
+		unexpected_exception = true;
+	}
+
+	TPUT_EXPECT(!unexpected_exception, L"ä¸åº”è¯¥æœ‰æœªæœŸå¾…çš„exception");
+}
 
 int wmain(int argc, wchar_t *argv[])
 {
 	setlocale(LC_ALL, "chs");
 	tp::unittest::instance().run_test();
 
-	reader* r = tp::servicemgr::get<reader>();
-	
-	tp::servicemgr::instance().destroy_all_services();
 	return 0;
 }

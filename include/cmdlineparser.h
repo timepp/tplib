@@ -18,7 +18,7 @@ public:
 	enum param_type_t {param_type_int, param_type_bool, param_type_string};
 
 	// EXCEPTIONs
-	struct invalid_option : public tp::exception
+	struct invalid_option : public tp::exception_with_oplist
 	{
 		std::wstring opt;
 		explicit invalid_option(const std::wstring& p): opt(p)
@@ -26,7 +26,7 @@ public:
 			message = opt + L": Invalid option";
 		}
 	};
-	struct missing_option_value : public tp::exception
+	struct missing_option_value : public tp::exception_with_oplist
 	{
 		std::wstring opt;
 		explicit missing_option_value(const std::wstring& p) : opt(p)
