@@ -96,7 +96,7 @@ namespace tp
 				return it->second;
 			}
 
-			return NULL;
+			return 0;
 		}
 
 		void free()
