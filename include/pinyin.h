@@ -45,6 +45,29 @@ public:
 		return ret;
 	}
 
+	static bool fuzzy_match(const wchar_t* pinyin, const wchar_t* str)
+	{
+		const wchar_t* p = str;
+		const wchar_t* q = pinyin;
+		while (*p)
+		{
+			if (*p == *q)
+			{
+				p++; q++;
+			}
+			else
+			{
+				if (q == pinyin || *(q-1) == L' ') break;
+
+				// move q to next syllable
+				while (*q && *q != L' ') q++;
+				if (!*q) break;
+				q++;
+			}
+		}
+		return !*p;
+	}
+
 private:
 
 	const wchar_t* const* m_py_tbl;
