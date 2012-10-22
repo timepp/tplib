@@ -15,16 +15,16 @@ namespace tp
 			static msg_crack mc;
 			return &mc;
 		}
-		std::wstring crack(const MSG& msg)
+		static const wchar_t* msgname(UINT msg, wchar_t* buffer, size_t buflen)
 		{
-			return crack(msg.message);
+			return msg_crack::instance()->crack(msg, buffer, buflen);
 		}
-		std::wstring crack(UINT message)
+
+		const wchar_t* crack(UINT message, wchar_t* buffer, size_t buflen)
 		{
-			mnmap_t::const_iterator it = m_mnmap.find(message);
-			if (it != m_mnmap.end())
+			if (message < WM_USER)
 			{
-				return it->second;
+				return m_mnmap[message];
 			}
 			else
 			{
@@ -34,18 +34,16 @@ namespace tp
 					// http://groups.google.it/group/microsoft.public.vc.mfc/browse_thread/thread/f83f7c12c80e4ada/460bc4c43a844a37
 					// 上面研究发现RegisterWindowMessage和RegisterClipboardFormat是同一地址
 					// 所以，可以用GetClipboardFormatName来得到注册的windows消息名字
-					wchar_t name[1024];
-					int len = ::GetClipboardFormatName(message, name, 1024);
-					name[len] = '\0';
-					return name;
+					int len = ::GetClipboardFormatName(message, buffer, buflen);
+					buffer[len] = '\0';
+					return buffer;
 				}
 			}
-			return L"";
+			return NULL;
 		}
 
 	private:
-		typedef std::map<UINT, const wchar_t *> mnmap_t;
-		mnmap_t m_mnmap;
+		const wchar_t* m_mnmap[0x400];
 
 		msg_crack()
 		{
@@ -271,8 +269,6 @@ namespace tp
 			TP_MC_ADD_MAP(WM_AFXLAST);
 			TP_MC_ADD_MAP(WM_PENWINFIRST);
 			TP_MC_ADD_MAP(WM_PENWINLAST);
-			TP_MC_ADD_MAP(WM_USER);
-			TP_MC_ADD_MAP(WM_APP);
 #undef  TP_MC_ADD_MAP
 		}
 	};
