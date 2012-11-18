@@ -113,7 +113,6 @@ namespace tp
 				}
 			}
 			throw invalid_option(opt);
-			return NULL;
 		}
 
 		const option_info* get_option_info(const wchar_t* opt) const
@@ -239,7 +238,7 @@ namespace tp
 		const wchar_t** argv = new const wchar_t* [argc];
 		ON_LEAVE_1(delete[] argv, const wchar_t**, argv);
 
-		int i = 0;
+		size_t i = 0;
 		for (strlist_t::const_iterator it = param_list.begin(); it != param_list.end(); ++it)
 		{
 			if (i < argc)

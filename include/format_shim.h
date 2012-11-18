@@ -212,7 +212,7 @@ namespace tp
 		{
 			int size_req = ::MultiByteToWideChar(cp, 0, str, -1, NULL, 0);
 			resize(static_cast<size_t>(size_req));
-			::MultiByteToWideChar(cp, 0, str, -1, m_buf, m_buf_size);
+			::MultiByteToWideChar(cp, 0, str, -1, m_buf, size_req);
 		}
 	};
 
@@ -224,7 +224,7 @@ namespace tp
 		{
 			int size_req = ::WideCharToMultiByte(cp, 0, str, -1, NULL, 0, NULL, NULL);
 			resize(static_cast<size_t>(size_req));
-			::WideCharToMultiByte(cp, 0, str, -1, m_buf, m_buf_size, NULL, NULL);
+			::WideCharToMultiByte(cp, 0, str, -1, m_buf, size_req, NULL, NULL);
 		}
 	};
 

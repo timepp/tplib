@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdio.h>
 #include <list>
 #include <string>
@@ -79,7 +81,7 @@ namespace tp
 			m_blocks.push_back(block);
 		}
 
-		void run_test(int blockid, const wchar_t* name, const wchar_t* tags)
+		void run_test(int blockid, const wchar_t* name, const wchar_t* /*tags*/)
 		{
 			for (TestBlockList::const_iterator it = m_blocks.begin(); it != m_blocks.end(); ++it)
 			{
@@ -97,7 +99,13 @@ namespace tp
 
 		static unittest& instance()
 		{
+			__pragma(warning(push)) __pragma(warning(disable:4640))
+			/// 这里有一个警告4640，说构造静态局部变量是非线程安全的
+			/// 在unittest的场景下，ut的构造是被一系列用于注册的全局变量的构造触发的，构造ut时一定不存在其他的线程
+			/// 所以在这里，这个警告可以被禁用
 			static unittest ut;
+			__pragma(warning(pop))
+
 			return ut;
 		}
 
@@ -160,30 +168,31 @@ namespace tp
 
 #define TPUT_CONCAT_INNER(a,b) a##b
 #define TPUT_CONCAT(a,b) TPUT_CONCAT_INNER(a,b)
-#define TPUT_NAME(prefix) TPUT_CONCAT(TPUT_CONCAT(prefix, _),__LINE__)
+
 
 
 #define TPUT_EXPECT(statement, msg)          \
-	do {                                \
+	{                                \
 		bool ret___ = (statement);         \
 		const wchar_t* op___ = msg? msg : TPUT_WIDESTRING(#statement); \
 		tp::unittest::instance().check(ret___, op___);   \
-	} while (0);
+	} 
 
 #define TPUT_EXPECT_EXCEPTION(statement, exception_type, msg) \
-	do { \
+	{ \
 		std::wstring op___ = msg? msg: std::wstring(TPUT_WIDESTRING(#statement)) + L" --throw-> " + TPUT_WIDESTRING(#exception_type); \
 		bool exception_thrown___ = false; \
 		try { statement; } catch (exception_type&) { \
 			exception_thrown___ = true; \
 		} \
 		tp::unittest::instance().check(exception_thrown___, op___.c_str()); \
-	} while (0);
+	}
 
-#define TPUT_REGISTER_BLOCK(f, name, tags) \
-	tp::test_register TPUT_NAME(TPUT_reg_var_)(&f, name, tags)
+#define TPUT_DEFINE_BLOCK3(name, tags, func, var) \
+	void func(); \
+	tp::test_register var(&func, name, tags); \
+	void func()
 
-#define TPUT_DEFINE_BLOCK(name, tags) \
-	void TPUT_NAME(TPUT_MODNAME)(); \
-	TPUT_REGISTER_BLOCK(TPUT_NAME(TPUT_MODNAME), name, tags); \
-	void TPUT_NAME(TPUT_MODNAME)()
+#define TPUT_DEFINE_BLOCK(name, tags) TPUT_DEFINE_BLOCK2(name, tags, tput_test_func_, tput_register_, __COUNTER__)
+#define TPUT_DEFINE_BLOCK2(name, tags, prefixf, prefixv, c) TPUT_DEFINE_BLOCK3(name, tags, TPUT_CONCAT(prefixf, c), TPUT_CONCAT(prefixv, c))
+

@@ -112,7 +112,7 @@ namespace tp
 
 			m_destroying = true;
 
-			for (size_t i = 0; i < _countof(m_services); i++)
+			for (int i = 0; i < _countof(m_services); i++)
 			{
 				destory_service(i);
 			}

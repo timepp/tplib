@@ -25,3 +25,5 @@
 #pragma warning(disable: 4514)
 // warning C4710: 'std::string std::locale::name(void) const' : function not inlined
 #pragma warning(disable: 4710)
+// warning C4820: 'tp::TestResult' : '3' bytes padding added after data member 'tp::TestResult::success'
+#pragma warning(disable: 4820)

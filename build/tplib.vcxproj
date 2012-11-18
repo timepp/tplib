@@ -80,6 +80,38 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\algorithm.h" />
+    <ClInclude Include="..\include\api_wrapper.h" />
+    <ClInclude Include="..\include\auto_release.h" />
+    <ClInclude Include="..\include\base64_codec.h" />
+    <ClInclude Include="..\include\cfgreader.h" />
+    <ClInclude Include="..\include\cmdlineparser.h" />
+    <ClInclude Include="..\include\composite.h" />
+    <ClInclude Include="..\include\compositetreectrl.h" />
+    <ClInclude Include="..\include\convert.h" />
+    <ClInclude Include="..\include\defs.h" />
+    <ClInclude Include="..\include\exception.h" />
+    <ClInclude Include="..\include\format_shim.h" />
+    <ClInclude Include="..\include\lock.h" />
+    <ClInclude Include="..\include\log.h" />
+    <ClInclude Include="..\include\log_context.h" />
+    <ClInclude Include="..\include\log_device.h" />
+    <ClInclude Include="..\include\msg_crack.h" />
+    <ClInclude Include="..\include\opblock.h" />
+    <ClInclude Include="..\include\oss.h" />
+    <ClInclude Include="..\include\oss_win.h" />
+    <ClInclude Include="..\include\pinyin.h" />
+    <ClInclude Include="..\include\processinfo.h" />
+    <ClInclude Include="..\include\service.h" />
+    <ClInclude Include="..\include\tplib.h" />
+    <ClInclude Include="..\include\tstring.h" />
+    <ClInclude Include="..\include\unittest.h" />
+    <ClInclude Include="..\include\util_win.h" />
+    <ClInclude Include="..\test\test_auto_release.h" />
+    <ClInclude Include="..\test\test_cmdlineparser.h" />
+    <ClInclude Include="..\test\test_format_shim.h" />
+    <ClInclude Include="..\test\test_pinyin.h" />
+    <ClInclude Include="..\test\test_service.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

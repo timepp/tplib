@@ -1861,7 +1861,7 @@ private:
 		m_char_tbl = table;
 		m_char_tbl_size = sizeof(table)/sizeof(table[0]);
 		m_chinese_char_min = 0x3400;
-		m_chinese_char_max = m_chinese_char_min + m_char_tbl_size - 1;
+		m_chinese_char_max = static_cast<wchar_t>(m_chinese_char_min + m_char_tbl_size - 1);
 	};
 };
 
