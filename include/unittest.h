@@ -86,7 +86,7 @@ namespace tp
 			for (TestBlockList::const_iterator it = m_blocks.begin(); it != m_blocks.end(); ++it)
 			{
 				if (blockid != 0 && it->blockid != blockid) continue;
-				if (name != NULL && it->name != name) continue;
+				if (name != NULL && !wildcard_match(it->name, name)) continue;
 
 				m_output->BlockBegin(*it);
 				(*it->func)();
@@ -136,6 +136,29 @@ namespace tp
 		{
 			m_output->OutputResult(res);
 		}
+		bool wildcard_match(const wchar_t* str, const wchar_t* pattern)
+		{
+			if (!*pattern) return true;
+			while (*str)
+			{
+				if(*pattern == '*')
+				{
+					do{pattern++;}while(*pattern=='*');
+					while(*str)
+						if(wildcard_match(str++,pattern))
+							return true; 
+					return false;
+				}
+				else if(*str == *pattern || *pattern =='?')
+				{
+					pattern++;
+					str++;
+				}
+				else return false;
+			}
+			while(*pattern == '*') ++pattern;
+			return !*pattern;
+		}
 
 		TestOutput* m_output;
 		int m_testid;
@@ -180,12 +203,22 @@ namespace tp
 
 #define TPUT_EXPECT_EXCEPTION(statement, exception_type, msg) \
 	{ \
-		std::wstring op___ = msg? msg: std::wstring(TPUT_WIDESTRING(#statement)) + L" --throw-> " + TPUT_WIDESTRING(#exception_type); \
+		std::wstring op___ = *msg? msg L":" TPUT_WIDESTRING(#exception_type): std::wstring(TPUT_WIDESTRING(#statement)) + L" --throw-> " + TPUT_WIDESTRING(#exception_type); \
 		bool exception_thrown___ = false; \
 		try { statement; } catch (exception_type&) { \
 			exception_thrown___ = true; \
 		} \
 		tp::unittest::instance().check(exception_thrown___, op___.c_str()); \
+	}
+
+#define TPUT_EXPECT_NO_EXCEPTION(statement, msg) \
+	{ \
+		const wchar_t* op___ = msg? msg : TPUT_WIDESTRING(#statement); \
+		bool exception_thrown___ = false; \
+		try { statement; } catch (...) { \
+			exception_thrown___ = true; \
+		} \
+		tp::unittest::instance().check(!exception_thrown___, op___); \
 	}
 
 #define TPUT_DEFINE_BLOCK3(name, tags, func, var) \
