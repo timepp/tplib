@@ -230,6 +230,17 @@ private:
 		}
 	}
 
+	component* CreateAndConfigure(const std::wstring name)
+	{
+		component* c = m_fc->create(name);
+		if (!m_fc->configure(c))
+		{
+			delete c;
+			c = NULL;
+		}
+		return c;
+	}
+
 	void OnRbuttonDown(UINT /*code*/, CPoint pt)
 	{
 		SetFocus();
@@ -332,15 +343,15 @@ private:
 	{
 		if (id >= MENUID_ADD_COMP_BEGIN && id <= MENUID_ADD_COMP_END)
 		{
-			component* c = m_fc->create(m_cnames[static_cast<size_t>(id - MENUID_ADD_COMP_BEGIN)]);
-			m_fc->configure(c);
+			component* c = CreateAndConfigure(m_cnames[static_cast<size_t>(id - MENUID_ADD_COMP_BEGIN)]);
+			if (!c) return;
 			CTreeItem item = GetSelectedItem();
 			InsertComponent(item, TVI_LAST, c);
 		}
 		else if (id >= MENUID_CVT_COMP_BEGIN && id <= MENUID_CVT_COMP_END)
 		{
-			component* c = m_fc->create(m_cnames[static_cast<size_t>(id - MENUID_CVT_COMP_BEGIN)]);
-			m_fc->configure(c);
+			component* c = CreateAndConfigure(m_cnames[static_cast<size_t>(id - MENUID_CVT_COMP_BEGIN)]);
+			if (!c) return;
 			CTreeItem item = GetSelectedItem();
 			CTreeItem parentItem = item.GetParent();
 			component* oldc = GetItemData(item);
@@ -353,8 +364,8 @@ private:
 		}
 		else if (id >= MENUID_ADD_COMP_AS_PARENT_BEGIN && id <= MENUID_ADD_COMP_AS_PARENT_END)
 		{
-			component* c = m_fc->create(m_cnames[static_cast<size_t>(id - MENUID_ADD_COMP_AS_PARENT_BEGIN)]);
-			m_fc->configure(c);
+			component* c = CreateAndConfigure(m_cnames[static_cast<size_t>(id - MENUID_ADD_COMP_AS_PARENT_BEGIN)]);
+			if (!c) return;
 			CTreeItem item = GetSelectedItem();
 			CTreeItem parentItem = item.GetParent();
 			component* me = GetItemData(item);
