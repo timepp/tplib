@@ -9,11 +9,11 @@
 #include "defs.h"
 #include "lock.h"
 
-#define SETOP(x) tp::servicemgr::get<tp::opmgr>()->set_op(x)
+#define SETOP(x) tp::global_service<tp::opmgr>()->set_op(x)
 #define OPBLOCK(x) SETOP(L"");tp::opblock TP_UNIQUE_NAME(opblock_)(x)
-#define CURRENT_OPLIST() tp::servicemgr::get<tp::opmgr>()->get_oplist(L" -> ")
+#define CURRENT_OPLIST() tp::global_service<tp::opmgr>()->get_oplist(L" -> ")
 
-#define SET_LONG_OP(x) tp::servicemgr::get<tp::opmgr>()->set_op(x, true)
+#define SET_LONG_OP(x) tp::global_service<tp::opmgr>()->set_op(x, true)
 
 namespace tp
 {
@@ -70,6 +70,15 @@ namespace tp
 			return lstr;
 		}
 
+		static size_t get_create_dependencies(sid_t* , size_t )
+		{
+			return 0;
+		}
+		static size_t get_destroy_dependencies(sid_t* , size_t )
+		{
+			return 0;
+		}
+
 	private:
 		opmap_t m_obmap;
 		mutable critical_section_lock m_lock;
@@ -109,18 +118,16 @@ namespace tp
 		}
 	};
 
-	DEFINE_SERVICE(opmgr, L"Operation Manager");
-
 	class opblock
 	{
 	public:
 		opblock(const std::wstring& op)
 		{
-			servicemgr::get<opmgr>()->push_block(op);
+			global_service<opmgr>()->push_block(op);
 		}
 		~opblock()
 		{
-			servicemgr::get<opmgr>()->pop_block();
+			global_service<opmgr>()->pop_block();
 		}
 	};
 }

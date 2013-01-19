@@ -5,265 +5,657 @@
 #include "defs.h"
 
 /** \file tplib service框架
- 服务管理器以singleton模式实现，管理系统中所有的服务。服务管理器提供如下功能：
- 1. 服务的统一获取入口
+ 服务管理器管理系统中所有的服务。服务管理器提供统一的服务获取和销毁的入口。
+ 服务管理器的特点如下：
+ 1. 获取服务几乎无代价，正常情况下无加锁操作
  2. 服务的按需创建
- 3. 服务的销毁，可设置服务销毁时的依赖关系
+ 3. 可设置服务依赖，在服务的创建和销毁时，会按照和依赖兼容的顺序进行
  4. 服务创建和销毁时，循环依赖的检测
+ 5. 解决了系统中singleton满天飞，各自为政，生存期和依赖关系失去控制的局面。
 
- 服务管理器要求系统遵守以下规则：
- 1. 整个系统中，除服务管理器外，没有任何复杂的全局变量或静态变量
- 2. 在进程退出之前，所有线程退出之后，调用服务管理器的destroy_all_services
+ 服务管理器使用一个静态数组保存所有服务的信息, 每个服务都对应一个整型的服务ID, 
+ 服务管理器使用服务ID做为下标，在服务数组中索引服务的相关信息，这使创建服务的开销降到最低。
+ 服务管理器要求具体服务必须事先显式设置创建和销毁时的依赖关系，这使得服务的创建和销毁变得可控，且可以应用一些检查机制。
+ 虽然存在一个全局服务管理器，但并不意味着服务管理器是一个singleton，可以在任何时候创建服务管理器的其它实例
+ （使用场景比如：跟用户相关的服务，可以由用户服务管理器管理；在新用户登录时会创建一个新的和这个用户关联的服务管理器）
 
- 在服务管理器中，保存了所有服务的信息，包括服务如何创建和销毁、服务销毁时的依赖关系、服务指针和服务状态。
- 服务管理器通过服务ID来获取某个服务，为了高效访问，服务ID定义为整型，服务管理器通过把服务ID做为下标，可以快速的索引到具体的服务。
+ 服务管理器要求整个系统遵守以下规则：
+ 1. 整个系统中，除一个全局服务管理器外，没有任何复杂的全局变量或静态变量
+ 2. 在进程退出时，调用全局服务管理器的destroy_all_services
+ 3. 在调用全局服务管理器的destroy_all_services之前，确保所有线程都已经正常退出
 
  服务管理器要求具体的服务X遵守以下规则：
  1. 服务类X不需要、也不可以实现成singleton
  2. 服务类X必须继承tp::service_impl接口
- 3. 服务类X必须在合适的时机调用add_service_info注册给服务管理器，这一般通过在类定义之后使用DEFINE_SERVICE实现
- 4. 如果服务X在销毁时需要用到服务Y，需要调用服务管理器的add_destroy_dependency增加销毁时的依赖关系
+ 3. 那么服务类X必须实现以下两个静态方法来指明此服务在创建时和销毁时所依赖的其他服务
+    * size_t get_create_dependencies(sid_t* sids, size_t len) = 0;
+    * size_t get_destroy_dependencies(sid_t* sids, size_t len) = 0;
  
  限制:
  1. 服务管理器支持的服务数量有上限，这个上限通过宏TP_SERVICE_MAX控制，根据实际需要可以改变
  */
 
 #ifndef TP_SERVICE_MAX
-#define TP_SERVICE_MAX  256
+#define TP_SERVICE_MAX 256
 #endif
 
 namespace tp
 {
-	struct service
+	typedef int sid_t;
+
+	/// 带引用计数的对象抽象
+	struct refobj
 	{
-		virtual ~service() {}
+		virtual int addref() = 0;
+		virtual int release() = 0;
+
+		virtual ~refobj(){}
 	};
 
-	struct service_creator
+	struct service : refobj
 	{
-		virtual ~service_creator() {}
-
-		virtual service* create_service() = 0;
-		virtual void destroy_service(service* s) = 0;
 	};
-	
-	typedef int service_id_t;
 
+	struct service_property
+	{
+		sid_t sid;
+		const wchar_t* name;
+		const wchar_t* description;
+	};
+
+	template <typename T>
+	struct service_ptr
+	{
+		T* m_ptr;
+
+		service_ptr();
+		~service_ptr();
+		service_ptr(T* p);
+		service_ptr(const service_ptr& rhs);
+		service_ptr& operator=(T* p);
+		service_ptr& operator=(const service_ptr& rhs);
+		T* operator->();
+	};
+
+	/// 服务元信息
+	struct service_factory: refobj
+	{
+		/** 返回该服务创建和销毁时显式依赖的服务ID
+		 *  在服务创建或销毁时，尝试获取未注册的依赖服务将会失败
+		 *  \param sids 用于接收依赖服务列表的缓冲区，可以为NULL
+		 *  \param len  sids != NULL时有效，表示缓冲区长度
+		 *  \return 销毁时，实际依赖服务的数量
+		*/
+		virtual size_t get_create_dependencies(sid_t* sids, size_t len) = 0;
+		virtual size_t get_destroy_dependencies(sid_t* sids, size_t len) = 0;
+
+		/** 创建service
+		 *  service创建之后，引用计数为1
+		 */
+		virtual service* create() = 0;
+
+		/// 服务名字和描述信息，service_factory要保证在自己的生命周期内，返回的字符串有效
+		virtual service_property get_service_property() = 0;
+	};
+
+	/// service管理器
 	class servicemgr
 	{
 	public:
-		struct service_exception : public tp::exception
-		{
-			service_id_t service_id;
-			const wchar_t* service_name;
-			service_exception(service_id_t sid, const wchar_t* name) : tp::exception(L"", L""), service_id(sid), service_name(name)
-			{
-			}
-		};
-		struct service_id_conflict : public service_exception
-		{
-			service_id_conflict(service_id_t sid, const wchar_t* name) : service_exception(sid, name)
-			{
-			}
-		};
-		struct service_destroyed : public service_exception
-		{
-			service_destroyed(service_id_t sid, const wchar_t* name) : service_exception(sid, name)
-			{
-			}
-		};
-		struct service_id_invalid : public service_exception
-		{
-			service_id_invalid(service_id_t sid, const wchar_t* name) : service_exception(sid, name)
-			{
-			}
-		};
+		servicemgr();
+		~servicemgr();
 
-	public:
-		static servicemgr& instance()
-		{
-			__pragma(warning(push))
-			__pragma(warning(disable:4640))
-			static servicemgr mgr;
-			__pragma(warning(pop))
-			return mgr;
-		}
+		void register_service(service_factory* factory);
 
-		void add_service_info(service_id_t sid, service_creator* creator, const wchar_t* service_name, const wchar_t* desc)
-		{
-			autolocker<critical_section_lock> l(m_lock);
-
-			service_info& si = get_service_info(sid);
-			if (si.creator || si.obj)
-			{
-				throw service_id_conflict(sid, service_name);
-			}
-
-			si.name = service_name;
-			si.desc = desc;
-			si.creator = creator;
-		}
-
-		/// before calling this function,
-		/// ensure all other threads are terminated
-		void destroy_all_services()
-		{
-			autolocker<critical_section_lock> l(m_lock);
-
-			m_destroying = true;
-
-			for (int i = 0; i < _countof(m_services); i++)
-			{
-				destory_service(i);
-			}
-
-			m_destroying = false;
-		}
-
-		void add_destroy_dependency(service_id_t sid, service_id_t dependent_sid)
-		{
-			autolocker<critical_section_lock> l(m_lock);
-
-			service_info& si = get_service_info(dependent_sid);
-			if (!si.m_dependants)
-			{
-				si.m_dependants = new std::list<service_id_t>;
-			}
-			si.m_dependants->push_back(sid);
-		}
+		service* get_service(sid_t sid);
 
 		template <typename T>
-		static T* get()
-		{
-			service_info& si = servicemgr::instance().get_service_info(T::service_id);
-			if (si.status == ss_created)
-			{
-				return static_cast<T*>(si.obj);
-			}
-			if (si.status == ss_destroyed || si.status == ss_destroying)
-			{
-				throw service_destroyed(T::service_id, si.name);
-			}
-			if (si.status == ss_none)
-			{
-				servicemgr::instance().create_service(si);
-			}
+		service_ptr<T> get_service();
 
-			return static_cast<T*>(si.obj);
-		};
+		void destroy_all_services();
+		void clear();
 
 	private:
 		enum service_status_t
 		{
-			ss_none,
+			ss_none = 0,
+			ss_creating_requirements,
+			ss_creating,
 			ss_created,
+			ss_destroying_dependents,
 			ss_destroying,
-			ss_destroyed
+			ss_destroyed,
+			ss_exception, // 异常状态
 		};
+		enum service_state_t {SS_ENABLED, SS_DISABLED};
+		typedef std::list<sid_t> sidlist_t;
 		struct service_info
 		{
-			const wchar_t* name;
-			const wchar_t* desc;
+			sid_t sid;
+			service_factory* factory;
 			service* obj;
-			service_creator* creator;
 			service_status_t status;
-			std::list<service_id_t>* m_dependants;
-			service_info() : name(0), obj(0), creator(0), status(ss_none), m_dependants(0)
-			{
-			}
+			sidlist_t* creating_requirements;      // 创建时依赖哪些服务
+			sidlist_t* creating_dependants;        // 被哪些服务在创建时依赖
+			sidlist_t* destroying_requirements;    // 销毁时依赖哪些服务
+			sidlist_t* destroying_dependants;      // 被哪些服务在销毁时依赖
+			service_state_t state;
 		};
 
 		service_info m_services[TP_SERVICE_MAX];
 		bool m_destroying;
+		bool m_creating_service;             // 是否正在创建某个服务
 		critical_section_lock m_lock;
 
 	private:
-		service_info& get_service_info(service_id_t sid)
-		{
-			size_t index = static_cast<size_t>(sid);
-			if (index >= _countof(m_services))
-			{
-				throw service_id_invalid(sid, L"");
-			}
+		service_info& get_service_info(sid_t sid);
+		void create_service(service_info& si);
+		bool destory_service(sid_t sid);
 
-			return m_services[index];
-		}
+		void create_requirements(service_info& si);
+		void destroy_dependents(service_info& si);
 
-		void destory_service(service_id_t sid)
-		{
-			service_info& si = get_service_info(sid);
-			if (si.status != ss_created) return;
-
-			si.status = ss_destroying;
-
-			if (si.m_dependants)
-			{
-				for (std::list<service_id_t>::const_iterator it = si.m_dependants->begin(); it != si.m_dependants->end(); ++it)
-				{
-					destory_service(*it);
-				}
-
-				delete si.m_dependants;
-				si.m_dependants = NULL;
-			}
-
-			si.creator->destroy_service(si.obj);
-			si.status = ss_destroyed;
-			si.obj = NULL;
-		}
-
-		void create_service(service_info& si)
-		{
-			autolocker<critical_section_lock> l(m_lock);
-			if (si.status == ss_none)
-			{
-				si.obj = si.creator->create_service();
-				si.status = ss_created;
-			}
-		}
-
-		servicemgr() : m_destroying(false)
-		{
-		}
+		void enable_services(const sidlist_t* lst, service_state_t s);
 
 		servicemgr(const servicemgr& rhs);
 		servicemgr& operator=(const servicemgr& rhs);
+	private:
+		class service_limiter
+		{
+		public:
+			service_limiter(servicemgr* mgr, const sidlist_t* lst) : m_mgr(mgr), m_lst(lst)
+			{
+				m_mgr->enable_services(NULL, SS_DISABLED);
+				m_mgr->enable_services(m_lst, SS_ENABLED);
+			}
+			~service_limiter()
+			{
+				m_mgr->enable_services(NULL, SS_ENABLED);
+			}
+		private:
+			const sidlist_t* m_lst;
+			servicemgr* m_mgr;
+		};
 	};
 
-	template <service_id_t sid>
+	template <typename T>
+	service_ptr<T> global_service()
+	{
+		return global_servicemgr().get_service<T>();
+	}
+
+	inline servicemgr& global_servicemgr()
+	{
+#pragma warning(push)
+#pragma warning(disable:4640)
+		static servicemgr mgr;
+#pragma warning(pop)
+		return mgr;
+	}
+
+	class refcounter
+	{
+	private:
+		long m_ref;
+	public:
+		explicit refcounter(int ref = 0) : m_ref(ref) {}
+		int addref()  { return ::InterlockedIncrement(&m_ref); }
+		int release() { return ::InterlockedDecrement(&m_ref); }
+	};
+
+#define IMPLEMENT_HEAP_REFCOUNT \
+	private: tp::refcounter m_ref; \
+	virtual int addref() { return m_ref.addref(); } \
+	virtual int release() { int ref = m_ref.release(); if (ref == 0) delete this; return ref; }
+
+	template <sid_t sid>
 	class service_impl : public service
 	{
+		refcounter m_ref;
+	public:
+		virtual int addref();
+		virtual int release();
 	public:
 		enum {service_id = sid};
 	};
 
 	template <typename T>
-	struct service_creator_impl : public service_creator
+	class service_factory_impl : public service_factory
 	{
-		service* create_service()
+		refcounter m_ref;
+		const wchar_t* m_name;
+		const wchar_t* m_desc;
+	public:
+		virtual int addref();
+		virtual int release();
+		virtual size_t get_create_dependencies(sid_t* sids, size_t len);
+		virtual size_t get_destroy_dependencies(sid_t* sids, size_t len);
+		virtual service* create();
+		virtual service_property get_service_property();
+
+	public:
+		service_factory_impl(const wchar_t* name, const wchar_t* desc);
+	};
+
+	struct service_exception : public tp::exception
+	{
+		sid_t service_id;
+		const wchar_t* service_name;
+		service_exception(sid_t sid, const wchar_t* name) : tp::exception(L"", L""), service_id(sid), service_name(name)
 		{
-			return new T;
-		}
-		void destroy_service(service* s)
-		{
-			delete s;
 		}
 	};
+
+#define DEF_SERVICE_EXPECTION(classname) struct classname : service_exception { explicit classname(tp::sid_t sid, const wchar_t* name = L""): service_exception(sid, name) {} }
+	DEF_SERVICE_EXPECTION(service_id_conflict);
+	DEF_SERVICE_EXPECTION(service_id_invalid);
+	DEF_SERVICE_EXPECTION(service_destroyed);
+	DEF_SERVICE_EXPECTION(service_cycle_create);
+	DEF_SERVICE_EXPECTION(service_cycle_destroy);
+	DEF_SERVICE_EXPECTION(service_out_of_dependency);
+#undef DEF_SERVICE_EXCEPTION
+}
+
+/// impl: servicemgr
+namespace tp
+{
+	inline servicemgr::servicemgr() : m_destroying(false)
+	{
+		memset(&m_services, 0, sizeof(m_services));
+	}
+
+	inline servicemgr::~servicemgr()
+	{
+		clear();
+	}
 	
+	inline void servicemgr::clear()
+	{
+		autolocker<critical_section_lock> l(m_lock);
+
+		destroy_all_services();
+		for (sid_t sid = 0; sid < _countof(m_services); sid++)
+		{
+			service_info& si = get_service_info(sid);
+			if (si.factory)
+			{
+				si.factory->release();
+				si.factory = NULL;
+			}
+			delete si.creating_requirements; si.creating_requirements = NULL;
+			delete si.creating_dependants; si.creating_dependants = NULL;
+			delete si.destroying_requirements; si.destroying_requirements = NULL;
+			delete si.destroying_dependants; si.destroying_dependants = NULL;
+			si.state = SS_ENABLED;
+			si.status = ss_none;
+			si.obj = NULL;
+		}
+	}
+
+	inline void servicemgr::register_service(service_factory* f)
+	{
+		autolocker<critical_section_lock> l(m_lock);
+		service_property sp = f->get_service_property();
+		service_info& si = get_service_info(sp.sid);
+		if (si.factory)
+		{
+			throw service_id_conflict(sp.sid);
+		}
+
+		si.sid = sp.sid;
+		si.status = ss_none;
+		si.factory = f;
+		si.factory->addref();
+
+		sid_t sids[TP_SERVICE_MAX];
+		size_t len;
+
+		// createing depends
+		len = si.factory->get_create_dependencies(sids, _countof(sids));
+		si.creating_requirements = new sidlist_t(sids, sids + len);
+
+		// destroying depends
+		len = si.factory->get_destroy_dependencies(sids, _countof(sids));
+		si.destroying_requirements = new sidlist_t(sids, sids + len);
+		for (size_t i = 0; i < len; i++)
+		{
+			service_info& si2 = get_service_info(sids[i]);
+			if (!si2.destroying_dependants)
+			{
+				si2.destroying_dependants = new sidlist_t;
+			}
+			si2.destroying_dependants->push_back(si.sid);
+		}
+	}
+
+	inline void servicemgr::destroy_all_services()
+	{
+		autolocker<critical_section_lock> l(m_lock);
+
+		m_destroying = true;
+
+		// 在销毁一个服务的过程中，有可能创建出新的服务，所以，整个销毁服务的过程，需要多次扫描
+		// 直到某次扫描过程中，已经没有服务被销毁为止
+		bool need_rescan = true;
+		while (need_rescan)
+		{
+			need_rescan = false;
+			for (size_t i = 0; i < _countof(m_services); i++)
+			{
+				bool destroyed = destory_service(static_cast<sid_t>(i));
+				if (destroyed) need_rescan = true;
+			}
+		}
+
+		m_destroying = false;
+	}
+
+	inline service* servicemgr::get_service(sid_t sid)
+	{
+		service_info& si = get_service_info(sid);
+		if (si.state == SS_DISABLED) throw service_out_of_dependency(sid);
+
+		switch (si.status)
+		{
+		case ss_none:
+			create_service(si);
+			return si.obj;
+		case ss_creating:
+		case ss_creating_requirements:
+			throw service_cycle_create(sid);
+		case ss_created:
+		case ss_destroying_dependents:
+			return si.obj;
+		case ss_destroying:
+			throw service_cycle_destroy(sid);
+		case ss_destroyed:
+			throw service_destroyed(sid);
+		case ss_exception:
+			return NULL; // 已经发生过异常，不再抛异常，而是直接返回NULL
+		default:
+			throw std::runtime_error("unknown service status");
+		}
+	}
+
+	template <typename T>
+	service_ptr<T> servicemgr::get_service()
+	{
+		service* s = get_service(T::service_id);
+		T* t = static_cast<T*>(s);
+		return service_ptr<T>(t);
+	}
+
+	inline servicemgr::service_info& servicemgr::get_service_info(sid_t sid)
+	{
+		if (sid >= _countof(m_services))
+		{
+			throw service_id_invalid(sid);
+		}
+
+		return m_services[sid];
+	}
+
+	inline void servicemgr::create_requirements(service_info& si)
+	{
+		if (si.creating_requirements)
+		{
+			for (sidlist_t::const_iterator it = si.creating_requirements->begin(); it != si.creating_requirements->end(); ++it)
+			{
+				service_info& si = get_service_info(*it);
+				create_service(si);
+			}
+		}
+	}
+
+	inline void servicemgr::destroy_dependents(service_info& si)
+	{
+		if (si.destroying_dependants)
+		{
+			for (sidlist_t::const_iterator it = si.destroying_dependants->begin(); it != si.destroying_dependants->end(); ++it)
+			{
+				destory_service(*it);
+			}
+		}
+	}
+
+	inline bool servicemgr::destory_service(sid_t sid)
+	{
+		autolocker<critical_section_lock> l(m_lock);
+		service_info& si = get_service_info(sid);
+		switch (si.status)
+		{
+		case ss_none:
+		case ss_exception:
+		case ss_destroyed: return false;
+		case ss_destroying_dependents:
+		case ss_destroying: throw service_cycle_destroy(si.sid);
+		case ss_creating_requirements:
+		case ss_creating: throw service_exception(si.sid, L"");
+		case ss_created: break;
+		}
+
+		if (!si.factory) throw service_id_invalid(si.sid);
+
+		try
+		{
+			si.status = ss_destroying_dependents;
+
+			destroy_dependents(si);
+
+			si.status = ss_destroying;
+
+			service_limiter lmt(this, si.destroying_requirements);
+			si.obj->release();
+			si.obj = NULL;
+
+			si.status = ss_destroyed;
+		}
+		catch (...)
+		{
+			si.status = ss_exception;
+			throw;
+		}
+
+		return true;
+	}
+
+	inline void servicemgr::create_service(service_info& si)
+	{
+		autolocker<critical_section_lock> l(m_lock);
+		switch (si.status)
+		{
+		case ss_created:
+		case ss_exception: return;
+		case ss_creating_requirements:
+		case ss_creating: throw service_cycle_create(si.sid);
+		case ss_destroying_dependents:
+		case ss_destroying:
+		case ss_destroyed: throw service_destroyed(si.sid);
+		case ss_none: break;
+		}
+
+		if (!si.factory) throw service_id_invalid(si.sid);
+
+		try
+		{
+			si.status = ss_creating_requirements;
+
+			create_requirements(si);
+
+			si.status = ss_creating;
+
+			service_limiter lmt(this, si.creating_requirements);
+			si.obj = si.factory->create();
+
+			si.status = ss_created;
+		}
+		catch (...)
+		{
+			si.status = ss_exception;
+			throw;
+		}
+	}
+
+	inline void servicemgr::enable_services(const sidlist_t* lst, servicemgr::service_state_t s)
+	{
+		if (!lst)
+		{
+			for (size_t i = 0; i < _countof(m_services); i++)
+			{
+				m_services[i].state = s;
+			}
+		}
+		else
+		{
+			for (sidlist_t::const_iterator it = lst->begin(); it != lst->end(); ++it)
+			{
+				m_services[*it].state = s;
+			}
+		}
+	}
+}
+
+/// impl: service_impl
+namespace tp
+{
+	template <sid_t sid>
+	inline int service_impl<sid>::addref()
+	{
+		return m_ref.addref();
+	}
+	template <sid_t sid>
+	inline int service_impl<sid>::release()
+	{
+		int ref = m_ref.release();
+		if (ref == 0) delete this;
+		return ref;
+	}
+}
+
+/// impl: service_factory_impl
+namespace tp
+{
+	template <typename T>
+	service_factory_impl<T>::service_factory_impl(const wchar_t* name, const wchar_t* desc)
+		: m_name(name), m_desc(desc)
+	{
+	}
+
+	template <typename T>
+	inline int service_factory_impl<T>::addref()
+	{
+		return m_ref.addref();
+	}
+
+	template <typename T>
+	inline int service_factory_impl<T>::release()
+	{
+		int ref = m_ref.release();
+		if (ref == 0) delete this;
+		return ref;
+	}
+
+	template <typename T>
+	inline service_property service_factory_impl<T>::get_service_property()
+	{
+		service_property sp;
+		sp.sid = T::service_id;
+		sp.name = m_name;
+		sp.description = m_desc;
+		return sp;
+	}
+
+	template <typename T>
+	inline size_t service_factory_impl<T>::get_create_dependencies(sid_t* sids, size_t len)
+	{
+		return T::get_create_dependencies(sids, len);
+	}
+
+	template <typename T>
+	inline size_t service_factory_impl<T>::get_destroy_dependencies(sid_t* sids, size_t len)
+	{
+		return T::get_destroy_dependencies(sids, len);
+	}
+
+	template <typename T>
+	inline service* service_factory_impl<T>::create()
+	{
+		service* s = new T;
+		s->addref();
+		return s;
+	}
+};
+
+/// impl: service_ptr
+namespace tp
+{
+	template <typename T>
+	service_ptr<T>::service_ptr() : m_ptr(NULL)
+	{
+	}
+
+	template <typename T>
+	service_ptr<T>::service_ptr(T* p)
+	{
+		m_ptr = p;
+		if (m_ptr) m_ptr->addref();
+	}
+
+	template <typename T>
+	service_ptr<T>::service_ptr(const service_ptr<T>& rhs)
+	{
+		m_ptr = rhs.m_ptr;
+		if (m_ptr) m_ptr->addref();
+	}
+
+	template <typename T>
+	service_ptr<T>::~service_ptr()
+	{
+		if (m_ptr) m_ptr->release();
+		m_ptr = NULL;
+	}
+	
+	template <typename T>
+	T* service_ptr<T>::operator->()
+	{
+		return m_ptr;
+	}
+
+	template <typename T>
+	service_ptr<T>& service_ptr<T>::operator=(T* p)
+	{
+		if (m_ptr) m_ptr->release();
+		m_ptr = p;
+		if (m_ptr) m_ptr->addref();
+		return *this;
+	}
+
+	template <typename T>
+	service_ptr<T>& service_ptr<T>::operator=(const service_ptr<T>& rhs)
+	{
+		if (m_ptr) m_ptr->release();
+		m_ptr = rhs.m_ptr;
+		if (m_ptr) m_ptr->addref();
+		return *this;
+	}
+
 }
 
 /// service_id reserved by tplib
 namespace tp
 {
-	const service_id_t SID_OPMGR = 0xF0;
+	const sid_t SID_OPMGR = TP_SERVICE_MAX - 1;
 }
 
-#define DEFINE_SERVICE(classname, service_desc) \
-	template <typename T> struct ServiceInitHelper_##classname { \
-		tp::service_creator_impl<classname> m_creator; \
-		ServiceInitHelper_##classname() { \
-			tp::servicemgr::instance().add_service_info(classname::service_id, &m_creator, TP_WIDESTRING(#classname), service_desc); \
+
+#define TP_DEFINE_GLOBAL_SERVICE3(classname, service_desc, defid) \
+	template <typename T> struct ServiceInitHelper_##defid { \
+		ServiceInitHelper_##defid() { \
+			tp::global_servicemgr().register_service(new tp::service_factory_impl<classname>(TP_WIDESTRING(#classname), service_desc)); \
 		} \
-		static ServiceInitHelper_##classname<int> s_initializer; \
+		static ServiceInitHelper_##defid<int> s_initializer; \
 	}; \
-	ServiceInitHelper_##classname<int> ServiceInitHelper_##classname<int>::s_initializer;
+	ServiceInitHelper_##defid<int> ServiceInitHelper_##defid<int>::s_initializer;
+#define TP_DEFINE_GLOBAL_SERVICE2(classname, service_desc, defid) TP_DEFINE_GLOBAL_SERVICE3(classname, service_desc, defid)
+#define TP_DEFINE_GLOBAL_SERVICE(classname, service_desc) TP_DEFINE_GLOBAL_SERVICE2(classname, service_desc, __COUNTER__)
+

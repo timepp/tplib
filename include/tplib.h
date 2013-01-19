@@ -1,77 +1,47 @@
 #pragma once
 
 #include "format_shim.h"
-#include "log.h"
-#include "log_device.h"
-#include "log_context.h"
 #include "auto_release.h"
-#include "algorithm.h"
+#include "service.h"
+#include "opblock.h"
+#include <stdarg.h>
+
+#define TP_SERVICE_DEFINE_CREATE_DEPENDENCIES(...) \
+	public: \
+	static size_t get_create_dependencies(tp::sid_t* sids, size_t len) \
+	{ \
+		return tp::helper::copy_dependencies(sids, len, __VA_ARGS__, -1); \
+	} 
+#define TP_SERVICE_DEFINE_DESTROY_DEPENDENCIES(...) \
+	public: \
+	static size_t get_destroy_dependencies(tp::sid_t* sids, size_t len) \
+	{ \
+		return tp::helper::copy_dependencies(sids, len, __VA_ARGS__, -1); \
+	} 
 
 namespace tp
 {
-	// 辅助类
-	class log_indenter
+	struct helper
 	{
-	public:
-		log_indenter(int indent) : m_indent(indent)
+		static void register_tp_global_services()
 		{
-			lc_indent::add_indent(m_indent);
+			servicemgr& mgr = global_servicemgr();
+			mgr.register_service(new service_factory_impl<opmgr>(L"opmgr", L"operation manager"));
 		}
-		~log_indenter()
+		
+		/// 可变参数，要求最后一个参数是-1
+		static size_t copy_dependencies(sid_t* dst, size_t dstlen, ...)
 		{
-			lc_indent::add_indent(-m_indent);
+			va_list args;
+			va_start(args, dstlen);
+			size_t srclen = 0;
+			for (sid_t sid = va_arg(args, sid_t); sid > 0; sid = va_arg(args, sid_t))
+			{
+				if (srclen <= dstlen) dst[srclen] = sid;
+				srclen++;
+			}
+			va_end(args);
+			return srclen;
 		}
-	private:
-		int m_indent;
 	};
-
-	class log_cc
-	{
-	public:
-		log_cc(log_device * ld) : m_ld(ld) {}
-		const log_cc& operator << (log_context * lc) const
-		{
-			log_add_context(m_ld, lc);
-			return *this;
-		}
-		const log_cc& operator << (const wchar_t * text) const
-		{
-			*this << new lc_text(text);
-			return *this;
-		}
-	private:
-		log_device * m_ld;
-	};
-
-
-	namespace sc
-	{
-		inline void log_default_console_config(bool show_tid = true)
-		{
-			ld_console * c = new ld_console;
-			c->set_context_attr(LCID_TIME, FOREGROUND_GREEN);
-			c->set_context_attr(LCID_TYPE, FOREGROUND_RED);
-			c->set_context_attr(LCID_TID,  FOREGROUND_GREEN | FOREGROUND_BLUE);
-			log_add_device(c, 0xFF);
-			log_cc(c) << new lc_time(L"%H:%M:%S", true);
-			if (show_tid) log_cc(c) << L" " << new lc_tid;
-			log_cc(c) << L" " << new lc_type(L"IVDE") << new lc_indent;
-		}
-		inline void log_default_file_config(const wchar_t * prefix)
-		{
-			ld_file * f = new ld_file(tp::cz(L"%s%s.log", prefix, lc_pid().value(0).c_str()));
-			log_add_device(f, 0xFF);
-			log_cc(f) << new lc_time(L"%Y-%m-%d %H:%M:%S", true) << L" " << new lc_tid << L" " << new lc_type(L"IVDE") << new lc_indent;
-		}
-		inline void log_default_mem_config(ld_mem_log& m)
-		{
-			log_add_device(&m, 0xFF, false);
-			log_cc(&m) << new lc_time(L"%Y-%m-%d %H:%M:%S", true) << L" " << new lc_tid << L" " << new lc_type(L"VIDE") << new lc_indent;
-		}
-		inline void log_win_error(const wchar_t * prefix)
-		{
-			tp::log(tp::cz(L"%s: %s", prefix, &tp::edwin()));
-		}
-	}
-
 }

@@ -27,3 +27,5 @@
 #pragma warning(disable: 4710)
 // warning C4820: 'tp::TestResult' : '3' bytes padding added after data member 'tp::TestResult::success'
 #pragma warning(disable: 4820)
+// warning C4571: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
+#pragma warning(disable: 4571)
