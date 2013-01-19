@@ -50,7 +50,10 @@ namespace tp
 		std::wstring get_target(size_t index) const;
 
 	public:
-		struct invalid_option : public tp::exception_with_oplist
+		struct parse_error : public tp::exception_with_oplist
+		{
+		};
+		struct invalid_option : public parse_error
 		{
 			std::wstring opt;
 			explicit invalid_option(const std::wstring& p): opt(p)
@@ -58,7 +61,7 @@ namespace tp
 				message = opt + L": Invalid option";
 			}
 		};
-		struct missing_option_value : public tp::exception_with_oplist
+		struct missing_option_value : parse_error
 		{
 			std::wstring opt;
 			explicit missing_option_value(const std::wstring& p) : opt(p)

@@ -17,12 +17,12 @@ TPUT_DEFINE_BLOCK(L"commandline parser", L"")
 		parser.parse(L"\"a b\".exe c ddd \"eee ffff\" ggg:hhh");
 		TPUT_EXPECT(parser.get_target_count() == 4, L"命令行中带引号");
 
-		TPUT_EXPECT_EXCEPTION(parser.parse(L"a.exe -f"), tp::cmdline_parser::invalid_option, 0);
+		TPUT_EXPECT_EXCEPTION(parser.parse(L"a.exe -f"), tp::cmdline_parser::invalid_option, L"");
 
 		bool silent = false;
 		parser.register_switch(L"s", L"silent", &silent);
 		parser.register_string_option(L"f", L"file");
-		TPUT_EXPECT_EXCEPTION(parser.parse(L"a.exe --file"), tp::cmdline_parser::missing_option_value, 0);
+		TPUT_EXPECT_EXCEPTION(parser.parse(L"a.exe --file"), tp::cmdline_parser::missing_option_value, L"");
 
 		parser.parse(L"a.exe --file=123 -s");
 		TPUT_EXPECT(silent, L"正确绑定开关选项");
@@ -35,7 +35,7 @@ TPUT_DEFINE_BLOCK(L"commandline parser", L"")
 		parser.parse(L"a.exe --time=abcde -t 193");
 		TPUT_EXPECT(t == L"193", L"后面的同名选项覆盖前面的选项");
 		
-	} catch (tp::exception&)
+	} catch (tp::cmdline_parser::parse_error&)
 	{
 		unexpected_exception = true;
 	}
