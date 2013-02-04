@@ -126,7 +126,7 @@ TPUT_DEFINE_BLOCK(L"service", L"")
 	typedef testservice<1> datamgr;
 	mgr.register_service(new datamgr::factory(&mgr, &tracestr));
 
-	tp::service_ptr<datamgr> r = mgr.get_service<datamgr>();
+	service_ptr<datamgr> r = mgr.get_service<datamgr>();
 	r->setdata(100);
 	r = NULL;
 	r = mgr.get_service<datamgr>();
@@ -259,7 +259,7 @@ TPUT_DEFINE_BLOCK(L"service.global", L"")
 {
 	typedef testservice<SID_MyService> MyService;
 	tp::global_servicemgr().register_service(new MyService::factory(NULL, NULL));
-	tp::service_ptr<MyService> s = tp::global_service<MyService>();
+	service_ptr<MyService> s = tp::global_service<MyService>();
 	s->setdata(100);
 	s = tp::global_service<MyService>();
 	TPUT_EXPECT(s->getdata() == 100, L"由全局服务管理器取出的相同SID是相同的服务对象");

@@ -63,20 +63,6 @@ namespace tp
 		const wchar_t* description;
 	};
 
-	template <typename T>
-	struct service_ptr
-	{
-		T* m_ptr;
-
-		service_ptr();
-		~service_ptr();
-		service_ptr(T* p);
-		service_ptr(const service_ptr& rhs);
-		service_ptr& operator=(T* p);
-		service_ptr& operator=(const service_ptr& rhs);
-		T* operator->();
-	};
-
 	/// 服务元信息
 	struct service_factory: refobj
 	{
@@ -110,7 +96,7 @@ namespace tp
 		service* get_service(sid_t sid);
 
 		template <typename T>
-		service_ptr<T> get_service();
+		T* get_service();
 
 		void destroy_all_services();
 		void clear();
@@ -179,7 +165,7 @@ namespace tp
 	};
 
 	template <typename T>
-	service_ptr<T> global_service()
+	T* global_service()
 	{
 		return global_servicemgr().get_service<T>();
 	}
@@ -378,11 +364,10 @@ namespace tp
 	}
 
 	template <typename T>
-	service_ptr<T> servicemgr::get_service()
+	T* servicemgr::get_service()
 	{
 		service* s = get_service(T::service_id);
-		T* t = static_cast<T*>(s);
-		return service_ptr<T>(t);
+		return static_cast<T*>(s);
 	}
 
 	inline servicemgr::service_info& servicemgr::get_service_info(sid_t sid)
@@ -586,62 +571,60 @@ namespace tp
 	}
 };
 
-/// impl: service_ptr
 namespace tp
 {
 	template <typename T>
-	service_ptr<T>::service_ptr() : m_ptr(NULL)
+	struct scoped_ref_ptr
 	{
-	}
+		T* m_ptr;
+
+		scoped_ref_ptr(T* p = NULL) : m_ptr(p)
+		{
+			if (m_ptr) m_ptr->addref();
+		}
+		scoped_ref_ptr(const scoped_ref_ptr& rhs) : m_ptr(rhs.m_ptr)
+		{
+			if (m_ptr) m_ptr->addref();
+		}
+		scoped_ref_ptr& operator=(T* p)
+		{
+			if (p) p->addref();
+			if (m_ptr) m_ptr->release();
+			m_ptr = p;
+			return *this;
+		}
+		scoped_ref_ptr& operator=(const scoped_ref_ptr& rhs)
+		{
+			return operator=(rhs.m_ptr);
+		}
+
+		~scoped_ref_ptr()
+		{
+			if (m_ptr) m_ptr->release();
+			m_ptr = NULL;
+		}
+		T* operator->()
+		{
+			return m_ptr;
+		}
+	};
 
 	template <typename T>
-	service_ptr<T>::service_ptr(T* p)
+	struct naked_ptr
 	{
-		m_ptr = p;
-		if (m_ptr) m_ptr->addref();
-	}
+		T* m_ptr;
 
-	template <typename T>
-	service_ptr<T>::service_ptr(const service_ptr<T>& rhs)
-	{
-		m_ptr = rhs.m_ptr;
-		if (m_ptr) m_ptr->addref();
-	}
-
-	template <typename T>
-	service_ptr<T>::~service_ptr()
-	{
-		if (m_ptr) m_ptr->release();
-		m_ptr = NULL;
-	}
-	
-	template <typename T>
-	T* service_ptr<T>::operator->()
-	{
-		return m_ptr;
-	}
-
-	template <typename T>
-	service_ptr<T>& service_ptr<T>::operator=(T* p)
-	{
-		if (m_ptr) m_ptr->release();
-		m_ptr = p;
-		if (m_ptr) m_ptr->addref();
-		return *this;
-	}
-
-	template <typename T>
-	service_ptr<T>& service_ptr<T>::operator=(const service_ptr<T>& rhs)
-	{
-		if (m_ptr) m_ptr->release();
-		m_ptr = rhs.m_ptr;
-		if (m_ptr) m_ptr->addref();
-		return *this;
-	}
-
+		naked_ptr(T* p = NULL) : m_ptr(p) {}
+		T* operator->() { return m_ptr; }
+	};
 }
 
-/// service_id reserved by tplib
+#ifdef TP_SERVICE_ENABLE_REFCOUNT
+	#define service_ptr tp::scoped_ref_ptr
+#else
+	#define service_ptr tp::naked_ptr
+#endif
+
 namespace tp
 {
 	const sid_t SID_OPMGR = TP_SERVICE_MAX - 1;
