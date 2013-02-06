@@ -263,7 +263,9 @@ TPUT_DEFINE_BLOCK(L"service.global", L"")
 	s->setdata(100);
 	s = tp::global_service<MyService>();
 	TPUT_EXPECT(s->getdata() == 100, L"由全局服务管理器取出的相同SID是相同的服务对象");
-	TPUT_EXPECT(s->addref() == 3 && s->release() == 2, L"全局服务的引用计数正常");
+
+	tp::scoped_ref_ptr<MyService> sps = tp::global_service<MyService>();
+	TPUT_EXPECT(sps->addref() == 3 && sps->release() == 2, L"全局服务的引用计数正常");
 
 	TPUT_EXPECT(tp::global_service<GlobalTestService>()->getdata() == 123, L"全局注册机制正常工作");
 }
