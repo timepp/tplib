@@ -27,9 +27,9 @@
  服务管理器要求具体的服务X遵守以下规则：
  1. 服务类X不需要、也不可以实现成singleton
  2. 服务类X必须继承tp::service_impl接口
- 3. 那么服务类X必须实现以下两个静态方法来指明此服务在创建时和销毁时所依赖的其他服务
-    * size_t get_create_dependencies(sid_t* sids, size_t len) = 0;
-    * size_t get_destroy_dependencies(sid_t* sids, size_t len) = 0;
+ 3. 服务类X需要用以下宏显式指定在创建时和销毁时依赖的其他服务
+    * TP_SET_DEPENDENCIES(create, ...)
+    * TP_SET_DEPENDENCIES(destroy, ...)
  
  限制:
  1. 服务管理器支持的服务数量有上限，这个上限通过宏TP_SERVICE_MAX控制，根据实际需要可以改变
@@ -642,3 +642,10 @@ namespace tp
 #define TP_DEFINE_GLOBAL_SERVICE2(classname, service_desc, defid) TP_DEFINE_GLOBAL_SERVICE3(classname, service_desc, defid)
 #define TP_DEFINE_GLOBAL_SERVICE(classname, service_desc) TP_DEFINE_GLOBAL_SERVICE2(classname, service_desc, __COUNTER__)
 
+#define TP_SET_DEPENDENCIES(phase, ...) \
+	public:static size_t get_##phase##_dependencies(tp::sid_t* sids, size_t len) { \
+		tp::sid_t dst[] = {0, __VA_ARGS__}; \
+		size_t dstlen = _countof(dst) - 1; \
+		if (len >= dstlen) { for (size_t i = 0; i < dstlen; i++) sids[i] = dst[i+1]; } \
+		return dstlen; \
+	}
