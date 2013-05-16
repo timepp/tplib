@@ -37,7 +37,7 @@ namespace tp
 		virtual void TestEnd(int total, int succeeded)
 		{
 			std::wstring spliteline(79, L'=');
-			wprintf_s(L"\n\n%s\n", spliteline.c_str());
+			wprintf_s(L"\n\n%s\n", spliteline.c_str(), spliteline.c_str());
 			wprintf_s(L"²âÊÔ½áÊø£¬%d ³É¹¦£¬%d Ê§°Ü\n", succeeded, total - succeeded);
 			wprintf_s(L"%s\n", spliteline.c_str());
 		}
@@ -66,6 +66,11 @@ namespace tp
 			m_testid = 1;
 		}
 
+		void set_test_output(TestOutput* o)
+		{
+			m_output = o;
+		}
+
 		void add_test_block(const wchar_t* name, const wchar_t* tags, void (*func)())
 		{
 			if (!name) return;
@@ -83,6 +88,8 @@ namespace tp
 
 		void run_test(int blockid, const wchar_t* name, const wchar_t* /*tags*/)
 		{
+			m_total_count = 0;
+			m_success_count = 0;
 			for (TestBlockList::const_iterator it = m_blocks.begin(); it != m_blocks.end(); ++it)
 			{
 				if (blockid != 0 && it->blockid != blockid) continue;
@@ -91,6 +98,7 @@ namespace tp
 				m_output->BlockBegin(*it);
 				(*it->func)();
 			}
+			m_output->TestEnd(m_total_count, m_success_count);
 		}
 		void run_test()                             { return run_test(0, NULL, NULL); }
 		void run_test(int blockid)                  { return run_test(blockid, NULL, NULL); }
@@ -110,14 +118,12 @@ namespace tp
 		}
 
 	private:
-		unittest(): m_testid(1), m_total_count(0), m_success_count(0), m_blockid(1)
+		unittest(): m_testid(1), m_total_count(0), m_success_count(0), m_blockid(1), m_output(NULL)
 		{
-			m_output = new ConsoleTestOutput;
+			
 		}
 		~unittest()
 		{
-			m_output->TestEnd(m_total_count, m_success_count);
-			delete m_output;
 		}
 
 		void output(int testid, bool success, const wchar_t* op)
