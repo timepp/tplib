@@ -1,23 +1,26 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <list>
 #include <string>
 
 namespace tp
 {
-	struct TestResult
-	{
-		int testid;
-		const wchar_t* operation;
-		bool success;
-	};
 	struct TestBlock
 	{
 		int blockid;
 		const wchar_t* name;
 		const wchar_t* tags;
 		void (*func)();
+	};
+	struct TestResult
+	{
+		int testid;
+		std::wstring operation;
+		std::wstring comment;
+		bool success;
+		const TestBlock* block;
 	};
 
 	struct TestOutput
@@ -53,13 +56,9 @@ namespace tp
 	class unittest
 	{
 	public:
-		void check_HR(HRESULT hr, const wchar_t* op)
+		void check(bool condition, const wchar_t* op, const wchar_t* comment = L"")
 		{
-			output(m_testid++, SUCCEEDED(hr), op);
-		}
-		void check(bool condition, const wchar_t* op)
-		{
-			output(m_testid++, condition, op);
+			output(m_testid++, condition, op, comment);
 		}
 		void ResetCounter()
 		{
@@ -95,6 +94,7 @@ namespace tp
 				if (blockid != 0 && it->blockid != blockid) continue;
 				if (name != NULL && !wildcard_match(it->name, name)) continue;
 
+				m_current_block = &(*it);
 				m_output->BlockBegin(*it);
 				(*it->func)();
 			}
@@ -117,6 +117,20 @@ namespace tp
 			return ut;
 		}
 
+		static void expect(bool cond, const wchar_t* msg)
+		{
+			tp::unittest::instance().check(cond, msg, L"");
+		}
+				static void expect(bool cond, const wchar_t* msg, const wchar_t* comment_fmt, ...)
+		{
+			va_list args;
+			va_start(args, comment_fmt);
+			wchar_t comment[1024];
+			_vsnwprintf_s(comment, _TRUNCATE, comment_fmt, args);
+			va_end(args);
+			tp::unittest::instance().check(cond, msg, comment);
+		}
+
 	private:
 		unittest(): m_testid(1), m_total_count(0), m_success_count(0), m_blockid(1), m_output(NULL)
 		{
@@ -126,7 +140,7 @@ namespace tp
 		{
 		}
 
-		void output(int testid, bool success, const wchar_t* op)
+		void output(int testid, bool success, const wchar_t* op, const wchar_t* comment)
 		{
 			m_total_count++;
 			if (success)
@@ -136,6 +150,8 @@ namespace tp
 			res.testid = testid;
 			res.success = success;
 			res.operation = op;
+			res.comment = comment;
+			res.block = m_current_block;
 			output(res);
 		}
 		void output(const TestResult& res)
@@ -173,6 +189,7 @@ namespace tp
 		int m_success_count;
 		typedef std::list<TestBlock> TestBlockList;
 		TestBlockList m_blocks;
+		const TestBlock* m_current_block;
 	};
 
 	class test_register
@@ -183,6 +200,7 @@ namespace tp
 			unittest::instance().add_test_block(name, tags, func);
 		}
 	};
+
 }
 
 #ifndef TPUT_WIDESTRING
@@ -197,7 +215,6 @@ namespace tp
 
 #define TPUT_CONCAT_INNER(a,b) a##b
 #define TPUT_CONCAT(a,b) TPUT_CONCAT_INNER(a,b)
-
 
 
 #define TPUT_EXPECT(statement, msg)          \
@@ -228,8 +245,8 @@ namespace tp
 	}
 
 #define TPUT_DEFINE_BLOCK3(name, tags, func, var) \
-	void func(); \
-	tp::test_register var(&func, name, tags); \
+	static void func(); \
+	static tp::test_register var(&func, name, tags); \
 	void func()
 
 #define TPUT_DEFINE_BLOCK(name, tags) TPUT_DEFINE_BLOCK2(name, tags, tput_test_func_, tput_register_, __COUNTER__)
