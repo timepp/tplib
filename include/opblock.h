@@ -130,6 +130,8 @@ namespace tp
 			global_service<opmgr>()->pop_block();
 		}
 	};
+
+	TP_DEFINE_GLOBAL_SERVICE(opmgr, L"²Ù×÷¹ÜÀíÆ÷");
 }
 
 #endif
