@@ -96,6 +96,6 @@ namespace tp
 /**
  scope guard using C++0x syntax
  */
-#define TP_SCOPE_EXIT tp::scope_exit_t TP_UNIQUE_NAME(tpse_) = [&]
+#define TP_SCOPE_EXIT tp::scope_exit_t TP_UNIQUE_NAME(tpse_) = [&]()
 
 #endif

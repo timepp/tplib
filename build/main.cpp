@@ -13,7 +13,9 @@ int wmain(int /*argc*/, wchar_t * /*argv*/[])
 {
 	setlocale(LC_ALL, "chs");
 	tp::helper::register_tp_global_services();
-	tp::unittest::instance().run_test(L"service*");
+	tp::ConsoleTestOutput o;
+	tp::unittest::instance().set_test_output(&o);
+	tp::unittest::instance().run_test(L"auto_release");
 
 	return 0;
 }

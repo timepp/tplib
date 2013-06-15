@@ -131,7 +131,7 @@ namespace tp
 		}
 	};
 
-	TP_DEFINE_GLOBAL_SERVICE(opmgr, L"操作管理器");
+//	TP_DEFINE_GLOBAL_SERVICE(opmgr, L"操作管理器");
 }
 
 #endif
