@@ -15,7 +15,7 @@ int wmain(int /*argc*/, wchar_t * /*argv*/[])
 	setlocale(LC_ALL, "chs");
 	tp::helper::register_tp_global_services();
 	tp::ConsoleTestOutput o;
-	tp::ListTestOutput lo;
+	tp::ListTestOutput lo(L"TPLIB unittest result");
 	tp::unittest::instance().set_test_output(&lo);
 	tp::unittest::instance().run_test(NULL);
 	lo.WaitUIExit();

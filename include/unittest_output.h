@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <process.h>
+#include <string>
 
 namespace tp
 {
@@ -21,7 +22,7 @@ namespace tp
 		typedef std::vector<tp::TestResult> results_t;
 
 	public:
-		ListTestOutput() : m_hwnd(NULL), m_list(NULL), m_uithread(NULL)
+        ListTestOutput(LPCWSTR title) : m_hwnd(NULL), m_list(NULL), m_uithread(NULL), m_title(title)
 		{
 			::InitializeCriticalSection(&m_csdata);
 
@@ -52,6 +53,10 @@ namespace tp
 		}
 		virtual void TestEnd(int total, int succeeded)
 		{
+            wchar_t buffer[256];
+            _snwprintf_s(buffer, _TRUNCATE, L" -- TOTAL:%d, FAILED:%d", total, total - succeeded);
+            std::wstring title = m_title + buffer;
+            ::SetWindowText(m_hwnd, title.c_str());
 		}
 
 		void WaitUIExit()
@@ -64,6 +69,8 @@ namespace tp
 		HWND m_hwnd;
 		HWND m_list;
 		HANDLE m_uithread;
+
+        std::wstring m_title;
 
 		results_t m_result;
 		CRITICAL_SECTION m_csdata;
@@ -83,6 +90,18 @@ namespace tp
 			return 0;
 		}
 
+        static void CopyTextToClipboard(LPCWSTR text)
+        {
+            const size_t len = (wcslen(text) + 1) * sizeof(wchar_t);
+            HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
+            memcpy(GlobalLock(hMem), text, len);
+            GlobalUnlock(hMem);
+            OpenClipboard(0);
+            EmptyClipboard();
+            SetClipboardData(CF_UNICODETEXT, hMem);
+            CloseClipboard();
+        }
+
 		void CreateWnd()
 		{
 			WNDCLASSW wc = {0};
@@ -90,7 +109,7 @@ namespace tp
 			wc.lpfnWndProc = &ListTestOutput::WndProc;
 			wc.lpszClassName = L"tplib_unittest_output";
 			::RegisterClassW(&wc);
-            m_hwnd = ::CreateWindowW(wc.lpszClassName, L"tplib_unittest", WS_VISIBLE | WS_OVERLAPPEDWINDOW, 0, 0, 1000, 500, NULL, NULL, NULL, this);
+            m_hwnd = ::CreateWindowW(wc.lpszClassName, m_title.c_str(), WS_VISIBLE | WS_OVERLAPPEDWINDOW, 0, 0, 1000, 500, NULL, NULL, NULL, this);
 			::ShowWindow(m_hwnd, SW_SHOW);
 		}
 		void CreateList(HWND hwnd)
@@ -134,6 +153,37 @@ namespace tp
 		{
 			::MoveWindow(m_list, 0, 0, cx, cy, TRUE);
 		}
+        void OnListKeyDown(LPNMLVKEYDOWN kd)
+        {
+            bool ctrldown = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+            if (ctrldown && kd->wVKey == L'C')
+            {
+                // control+C: copy test case description
+                int index = -1;
+                std::wstring text;
+                for (;;)
+                {
+                    index = ListView_GetNextItem(m_list, index, LVNI_SELECTED);
+                    if (index < 0) break;
+                    ::EnterCriticalSection(&m_csdata);
+                    text += m_result[index].operation;
+                    text += L"\r\n";
+                    ::LeaveCriticalSection(&m_csdata);
+                }
+                if (text.length() > 0)
+                {
+                    CopyTextToClipboard(text.c_str());
+                }
+            }
+            if (ctrldown && kd->wVKey == L'A')
+            {
+                int count = ListView_GetItemCount(m_list);
+                for (int i = 0; i < count; i++)
+                {
+                    ListView_SetItemState(m_list, i, LVIS_SELECTED, LVIS_SELECTED);
+                }
+            }
+        }
 		void OnListGetDispInfo(LPNMLVDISPINFOW info)
 		{
 			int index = info->item.iItem;
@@ -243,6 +293,10 @@ namespace tp
 						{
 							return OnCustomDrawList((LPNMLVCUSTOMDRAW)lp);
 						}
+                        if (nmhdr->code == LVN_KEYDOWN)
+                        {
+                            OnListKeyDown((LPNMLVKEYDOWN) lp);
+                        }
 					}
 				}
 				break;
