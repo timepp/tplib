@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 
 #include <tplib.h>
+#include <unittest_output.h>
 #include <test_pinyin.h>
 #include <test_auto_release.h>
 #include <test_format_shim.h>
@@ -14,8 +15,9 @@ int wmain(int /*argc*/, wchar_t * /*argv*/[])
 	setlocale(LC_ALL, "chs");
 	tp::helper::register_tp_global_services();
 	tp::ConsoleTestOutput o;
-	tp::unittest::instance().set_test_output(&o);
-	tp::unittest::instance().run_test(L"auto_release");
-
+	tp::ListTestOutput lo;
+	tp::unittest::instance().set_test_output(&lo);
+	tp::unittest::instance().run_test(NULL);
+	lo.WaitUIExit();
 	return 0;
 }
