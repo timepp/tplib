@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 #include <pinyin.h>
 #include <unittest.h>
@@ -7,16 +7,21 @@
 TPUT_DEFINE_BLOCK(L"pinyin", L"")
 {
 	tp::pinyintool pyt;
-	TPUT_EXPECT(pyt.pinyin_of_string(L"πÍπ«∑€") == L"gui gu fen", NULL);
-	TPUT_EXPECT(pyt.pinyin_of_string(L"ΩÒƒÍCPI «∂‡…Ÿ?") == L"jin nian CPI shi duo shao ?", NULL);
-	TPUT_EXPECT(pyt.pinyin_of_string(L"peach «Ã“µƒ“‚Àº") == L"peach shi tao di yi si", NULL);
+	TPUT_EXPECT(pyt.pinyin_of_string(L"ÈæüÈ™®Á≤â") == L"gui gu fen", NULL);
+	TPUT_EXPECT(pyt.pinyin_of_string(L"‰ªäÂπ¥CPIÊòØÂ§öÂ∞ë?") == L"jin nian CPI shi duo shao ?", NULL);
+	TPUT_EXPECT(pyt.pinyin_of_string(L"peachÊòØÊ°ÉÁöÑÊÑèÊÄù") == L"peach shi tao di yi si", NULL);
 	TPUT_EXPECT(pyt.fuzzy_match(L"zhong guo", L"zg"), NULL);
 	TPUT_EXPECT(pyt.fuzzy_match(L"zhong guo", L"zhg"), NULL);
 	TPUT_EXPECT(pyt.fuzzy_match(L"zhong guo", L"zhong"), NULL);
 	TPUT_EXPECT(!pyt.fuzzy_match(L"zhong guo", L"guo"), NULL);
 	
-	std::wstring zh = pyt.pinyin_of_string(L"÷–ª™»À√Òπ≤∫Õπ˙");
-	TPUT_EXPECT(pyt.fuzzy_match(zh.c_str(), L"zhhrmghg"), NULL);
-	TPUT_EXPECT(pyt.fuzzy_match(zh.c_str(), L"zhrmghg"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zhhrmghg"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"z"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zh"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zhr"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zhhr"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zhuarmg"), NULL);
+	TPUT_EXPECT(!pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zhohua"), NULL);
+	TPUT_EXPECT(pyt.fuzzy_match(L"zhong hua ren min gong he guo", L"zhhrmghguo"), NULL);
 }
 

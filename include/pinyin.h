@@ -45,27 +45,39 @@ public:
 		return ret;
 	}
 
+	// pinyin and str sould not NULL
 	static bool fuzzy_match(const wchar_t* pinyin, const wchar_t* str)
 	{
-		const wchar_t* p = str;
-		const wchar_t* q = pinyin;
-		while (*p)
-		{
-			if (*p == *q)
-			{
-				p++; q++;
-			}
-			else
-			{
-				if (q == pinyin || *(q-1) == L' ') break;
+		// if all str are consumed, then it's a partly or fully match, return
+		if (!*str) return true;
 
-				// move q to next syllable
-				while (*q && *q != L' ') q++;
-				if (!*q) break;
-				q++;
+		// if mismatched at any point, return
+		if (*pinyin != *str) return false;
+
+		const wchar_t* syllable_end = NULL;
+		for (syllable_end = pinyin; *syllable_end && *syllable_end != L' '; syllable_end++);
+		const wchar_t* pinyin_next = syllable_end;
+		while (*pinyin_next == L' ') pinyin_next++;		
+		
+		// we have 3 ways to consume str, in all cases pinyin always step to next syllable (pinyin_next):
+		// 1. consume 1 char
+		if (fuzzy_match(pinyin_next, str + 1)) return true;
+		// 2. consume 2 char in case of 'zh', 'ch', 'sh'
+		if (str[1] == L'h' && (str[0] == L'z' || str[0] == L'c' || str[0] == L's'))
+		{
+			if (wcsncmp(str, pinyin, 2) == 0)
+			{
+				if (fuzzy_match(pinyin_next, str + 2)) return true;
 			}
 		}
-		return !*p;
+		// 3. consume one syllable
+		size_t syllable_len = static_cast<size_t>(syllable_end - pinyin);
+		if (wcsncmp(str, pinyin, syllable_len) == 0)
+		{
+			if (fuzzy_match(pinyin_next, str + syllable_len)) return true;
+		}
+
+		return false;
 	}
 
 private:

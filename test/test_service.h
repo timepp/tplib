@@ -126,15 +126,15 @@ TPUT_DEFINE_BLOCK(L"service", L"")
 	typedef testservice<1> datamgr;
 	mgr.register_service(new datamgr::factory(&mgr, &tracestr));
 
-	service_ptr<datamgr> r = mgr.get_service<datamgr>();
+	tp::scoped_ref_ptr<datamgr> r = mgr.get_service<datamgr>();
 	r->setdata(100);
 	r = NULL;
 	r = mgr.get_service<datamgr>();
-	TPUT_EXPECT(r->getdata() == 100, L"经service返回的是同一实例");
+	TPUT_EXPECT(r->getdata() == 100, L"different get_service calls return same object");
 	mgr.destroy_all_services();
 	tmp = tracestr;
 	r = NULL; 
-	TPUT_EXPECT(tmp == L"1 " && tracestr == L"1 ~1 ", L"service的引用计数机制正常");
+	TPUT_EXPECT(tmp == L"1 " && tracestr == L"1 ~1 ", L"service ref counter");
 	
 	mgr.clear();
 	mgr.register_service(new testservice<1, 2,3,6,  0,0,0>::factory(&mgr, &tracestr));
