@@ -17,121 +17,121 @@
 
 namespace tp
 {
-	class opmgr : public service_impl<SID_OPMGR>
-	{
-		typedef std::list<std::wstring> strlist_t;
-		struct oplist
-		{
-			strlist_t lst;
-			std::wstring op;
-		};
-		typedef std::map<threadid_t, oplist*> opmap_t;
-	public:
-		~opmgr()
-		{
-			free();
-		}
+    class opmgr : public service_impl<SID_OPMGR>
+    {
+        typedef std::list<std::wstring> strlist_t;
+        struct oplist
+        {
+            strlist_t lst;
+            std::wstring op;
+        };
+        typedef std::map<threadid_t, oplist*> opmap_t;
+    public:
+        ~opmgr()
+        {
+            free();
+        }
 
-		void push_block(const std::wstring& op)
-		{
-			get_current_oplist()->lst.push_back(op);
-		}
-		void pop_block()
-		{
-			get_current_oplist()->lst.pop_back();
-		}
-		void set_op(const std::wstring& op, bool display = false)
-		{
-			get_current_oplist()->op = op;
-			if (display)
-			{
-				wprintf(L"%s...\n", op.c_str());
-			}
-		}
-		std::wstring get_oplist(const std::wstring& sep) const
-		{
-			std::wstring lstr;
+        void push_block(const std::wstring& op)
+        {
+            get_current_oplist()->lst.push_back(op);
+        }
+        void pop_block()
+        {
+            get_current_oplist()->lst.pop_back();
+        }
+        void set_op(const std::wstring& op, bool display = false)
+        {
+            get_current_oplist()->op = op;
+            if (display)
+            {
+                wprintf(L"%s...\n", op.c_str());
+            }
+        }
+        std::wstring get_oplist(const std::wstring& sep) const
+        {
+            std::wstring lstr;
 
-			const oplist* lst = get_current_oplist();
-			if (lst)
-			{
-				for (strlist_t::const_iterator it = lst->lst.begin(); it != lst->lst.end(); ++it)
-				{
-					if (!lstr.empty()) lstr += sep;
-					lstr += *it;
-				}
-				if (!lst->op.empty())
-				{
-					if (!lstr.empty()) lstr += sep;
-					lstr += lst->op;
-				}
-			}
+            const oplist* lst = get_current_oplist();
+            if (lst)
+            {
+                for (strlist_t::const_iterator it = lst->lst.begin(); it != lst->lst.end(); ++it)
+                {
+                    if (!lstr.empty()) lstr += sep;
+                    lstr += *it;
+                }
+                if (!lst->op.empty())
+                {
+                    if (!lstr.empty()) lstr += sep;
+                    lstr += lst->op;
+                }
+            }
 
-			return lstr;
-		}
+            return lstr;
+        }
 
-		static size_t get_create_dependencies(sid_t* , size_t )
-		{
-			return 0;
-		}
-		static size_t get_destroy_dependencies(sid_t* , size_t )
-		{
-			return 0;
-		}
+        static size_t get_create_dependencies(sid_t* , size_t )
+        {
+            return 0;
+        }
+        static size_t get_destroy_dependencies(sid_t* , size_t )
+        {
+            return 0;
+        }
 
-	private:
-		opmap_t m_obmap;
-		mutable critical_section_lock m_lock;
+    private:
+        opmap_t m_obmap;
+        mutable critical_section_lock m_lock;
 
-		oplist* get_current_oplist()
-		{
-			autolocker<critical_section_lock> locker(m_lock);
+        oplist* get_current_oplist()
+        {
+            autolocker<critical_section_lock> locker(m_lock);
 
-			oplist*& lst = m_obmap[os::current_tid()];
-			if (!lst)
-			{
-				lst = new oplist;
-			}
+            oplist*& lst = m_obmap[os::current_tid()];
+            if (!lst)
+            {
+                lst = new oplist;
+            }
 
-			return lst;
-		}
-		oplist* get_current_oplist() const
-		{
-			autolocker<critical_section_lock> locker(m_lock);
+            return lst;
+        }
+        oplist* get_current_oplist() const
+        {
+            autolocker<critical_section_lock> locker(m_lock);
 
-			opmap_t::const_iterator it = m_obmap.find(os::current_tid());
-			if (it != m_obmap.end())
-			{
-				return it->second;
-			}
+            opmap_t::const_iterator it = m_obmap.find(os::current_tid());
+            if (it != m_obmap.end())
+            {
+                return it->second;
+            }
 
-			return 0;
-		}
+            return 0;
+        }
 
-		void free()
-		{
-			for (opmap_t::const_iterator it = m_obmap.begin(); it != m_obmap.end(); ++it)
-			{
-				delete it->second;
-			}
-			m_obmap.clear();
-		}
-	};
+        void free()
+        {
+            for (opmap_t::const_iterator it = m_obmap.begin(); it != m_obmap.end(); ++it)
+            {
+                delete it->second;
+            }
+            m_obmap.clear();
+        }
+    };
 
-	class opblock
-	{
-	public:
-		opblock(const std::wstring& op)
-		{
-			global_service<opmgr>()->push_block(op);
-		}
-		~opblock()
-		{
-			global_service<opmgr>()->pop_block();
-		}
-	};
+    class opblock
+    {
+    public:
+        opblock(const std::wstring& op)
+        {
+            global_service<opmgr>()->push_block(op);
+        }
+        ~opblock()
+        {
+            global_service<opmgr>()->pop_block();
+        }
+    };
 
-//	TP_DEFINE_GLOBAL_SERVICE(opmgr, L"操作管理器");
+//    TP_DEFINE_GLOBAL_SERVICE(opmgr, L"操作管理器");
 }
 
 #endif

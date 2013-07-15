@@ -12,19 +12,19 @@
 namespace tp
 {
 
-	//! general exception
-	struct exception
-	{
-		std::wstring oplist;
-		std::wstring message;
+    //! general exception
+    struct exception
+    {
+        std::wstring oplist;
+        std::wstring message;
 
-		exception(const std::wstring& l, const std::wstring& m) : oplist(l), message(m)
-		{
-		}
+        exception(const std::wstring& l, const std::wstring& m) : oplist(l), message(m)
+        {
+        }
 
-		exception(const exception& e) : oplist(e.oplist), message(e.message)
-		{
-		}
-	};
+        exception(const exception& e) : oplist(e.oplist), message(e.message)
+        {
+        }
+    };
 
 }
