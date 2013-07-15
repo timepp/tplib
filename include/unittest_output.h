@@ -1,6 +1,7 @@
 #pragma once
 
 #include "unittest.h"
+#include "lock.h"
 #include <vector>
 #include <Windows.h>
 #include <CommCtrl.h>
@@ -24,31 +25,37 @@ namespace tp
 	public:
         ListTestOutput(LPCWSTR title) : m_hwnd(NULL), m_list(NULL), m_uithread(NULL), m_title(title)
 		{
-			::InitializeCriticalSection(&m_csdata);
-
 			UIThreadParam up;
 			up.lto = this;
 			up.readyevent = ::CreateEventW(NULL, FALSE, FALSE, NULL);
 			m_uithread = (HANDLE)::_beginthreadex(NULL, 0, &ListTestOutput::UIThread, &up, 0, NULL);
-			::WaitForSingleObject(up.readyevent, INFINITE);
-			::CloseHandle(up.readyevent);
+            if (up.readyevent)
+            {
+                ::WaitForSingleObject(up.readyevent, INFINITE);
+                ::CloseHandle(up.readyevent);
+            }
+            else
+            {
+                ::Sleep(1000);
+            }
 		}
 		~ListTestOutput()
 		{
-			::DeleteCriticalSection(&m_csdata);
 		}
 
-		virtual void BlockBegin(const TestBlock& block)
+		virtual void BlockBegin(const TestBlock& /*block*/)
 		{
 			
 		}
 		virtual void OutputResult(const TestResult& res)
 		{
 			size_t count = 0;
-			::EnterCriticalSection(&m_csdata);
+
+            m_csdata.lock();
 			m_result.push_back(res);
 			count = m_result.size();
-			::LeaveCriticalSection(&m_csdata);
+            m_csdata.unlock();
+
 			::PostMessage(m_list, LVM_SETITEMCOUNT, count, 0);
 		}
 		virtual void TestEnd(int total, int succeeded)
@@ -73,7 +80,9 @@ namespace tp
         std::wstring m_title;
 
 		results_t m_result;
-		CRITICAL_SECTION m_csdata;
+		tp::critical_section_lock m_csdata;
+
+        TestResult m_dummyResult;
 
 	private:
 		static unsigned int __stdcall UIThread(void* param)
@@ -90,16 +99,32 @@ namespace tp
 			return 0;
 		}
 
+        const TestResult& GetTestResult(int index)
+        {
+            size_t i = static_cast<size_t>(index);
+            if (i < m_result.size()) return m_result[i];
+            return m_dummyResult;
+        }
+
         static void CopyTextToClipboard(LPCWSTR text)
         {
             const size_t len = (wcslen(text) + 1) * sizeof(wchar_t);
             HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
-            memcpy(GlobalLock(hMem), text, len);
-            GlobalUnlock(hMem);
-            OpenClipboard(0);
-            EmptyClipboard();
-            SetClipboardData(CF_UNICODETEXT, hMem);
-            CloseClipboard();
+            if (hMem != NULL)
+            {
+                LPVOID addr = GlobalLock(hMem);
+                if (addr != NULL)
+                {
+                    memcpy(addr, text, len);
+                    GlobalUnlock(hMem);
+                    OpenClipboard(0);
+                    EmptyClipboard();
+                    SetClipboardData(CF_UNICODETEXT, hMem);
+                    CloseClipboard();
+                }
+
+                GlobalFree(hMem);
+            }
         }
 
 		void CreateWnd()
@@ -117,7 +142,7 @@ namespace tp
 			DWORD style = LVS_REPORT|LVS_OWNERDATA;
 			DWORD exstyle = LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES;
 			m_list = ::CreateWindowW(L"SysListView32", L"tput_list", WS_CHILD|WS_VISIBLE|WS_BORDER|style, 0, 0, 400, 300, hwnd, NULL, NULL, NULL);
-			::SendMessage(m_list, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exstyle);
+			::SendMessage(m_list, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, (LPARAM)exstyle);
 
 			struct
 			{
@@ -165,10 +190,10 @@ namespace tp
                 {
                     index = ListView_GetNextItem(m_list, index, LVNI_SELECTED);
                     if (index < 0) break;
-                    ::EnterCriticalSection(&m_csdata);
-                    text += m_result[index].operation;
+                    m_csdata.lock();
+                    text += GetTestResult(index).operation;
                     text += L"\r\n";
-                    ::LeaveCriticalSection(&m_csdata);
+                    m_csdata.unlock();
                 }
                 if (text.length() > 0)
                 {
@@ -188,12 +213,11 @@ namespace tp
 		{
 			int index = info->item.iItem;
 			int subindex = info->item.iSubItem;
-			size_t textlen = info->item.cchTextMax;
+			size_t textlen = static_cast<size_t>(info->item.cchTextMax);
 			tp::TestResult tr;
-			::EnterCriticalSection(&m_csdata);
-			tr = m_result[index];
-			::LeaveCriticalSection(&m_csdata);
-			wchar_t cvtbuf[1024];
+            m_csdata.lock();
+			tr = GetTestResult(index);
+            m_csdata.unlock();
 			if (info->item.mask & LVIF_TEXT)
 			{
 				switch (subindex)
@@ -226,7 +250,7 @@ namespace tp
 			if (cd->nmcd.dwDrawStage == CDDS_ITEMPREPAINT)
 			{
 				int index = static_cast<int>(cd->nmcd.dwItemSpec);
-				const tp::TestResult& tr = m_result[index];
+				const tp::TestResult& tr = GetTestResult(index);
 				if (!tr.success)
 				{
 					cd->clrTextBk = RGB(255, 128, 128);

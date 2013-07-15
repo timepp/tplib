@@ -39,7 +39,7 @@ struct critical_section_lock
 	}
 
 #if (_MSC_VER >= 1700)
-	_Acquires_lock_(this->m_cs)
+    _Releases_lock_(this->m_cs)
 #endif
 	void unlock() 
 	{

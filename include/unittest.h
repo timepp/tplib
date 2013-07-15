@@ -28,6 +28,7 @@ namespace tp
 		virtual void BlockBegin(const TestBlock& block) = 0;
 		virtual void OutputResult(const TestResult& res) = 0;
 		virtual void TestEnd(int total, int succeeded) = 0;
+        virtual ~TestOutput() {}
 	};
 
 	class ConsoleTestOutput : public TestOutput
@@ -35,12 +36,12 @@ namespace tp
 	public:
 		virtual void OutputResult(const TestResult& res)
 		{
-			wprintf_s(L"[%03d] %-4s | %s\n", res.testid, res.success? L"OK":L"FAIL", res.operation);
+			wprintf_s(L"[%03d] %-4s | %s\n", res.testid, res.success? L"OK":L"FAIL", res.operation.c_str());
 		}
 		virtual void TestEnd(int total, int succeeded)
 		{
 			std::wstring spliteline(79, L'=');
-			wprintf_s(L"\n\n%s\n", spliteline.c_str(), spliteline.c_str());
+			wprintf_s(L"\n%s\n%s\n", spliteline.c_str(), spliteline.c_str());
 			wprintf_s(L"≤‚ ‘Ω· ¯£¨%d ≥…π¶£¨%d  ß∞‹\n", succeeded, total - succeeded);
 			wprintf_s(L"%s\n", spliteline.c_str());
 		}
