@@ -83,7 +83,6 @@
     <ClInclude Include="..\include\algorithm.h" />
     <ClInclude Include="..\include\api_wrapper.h" />
     <ClInclude Include="..\include\auto_release.h" />
-    <ClInclude Include="..\include\base64_codec.h" />
     <ClInclude Include="..\include\cfgreader.h" />
     <ClInclude Include="..\include\cmdlineparser.h" />
     <ClInclude Include="..\include\composite.h" />
@@ -108,6 +107,7 @@
     <ClInclude Include="..\include\unittest.h" />
     <ClInclude Include="..\include\unittest_output.h" />
     <ClInclude Include="..\include\util_win.h" />
+    <ClInclude Include="..\test\test_algorithm.h" />
     <ClInclude Include="..\test\test_auto_release.h" />
     <ClInclude Include="..\test\test_cmdlineparser.h" />
     <ClInclude Include="..\test\test_format_shim.h" />

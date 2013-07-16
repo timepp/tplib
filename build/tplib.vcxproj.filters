@@ -27,9 +27,6 @@
     <ClInclude Include="..\include\auto_release.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\base64_codec.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\cfgreader.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -116,6 +113,9 @@
     </ClInclude>
     <ClInclude Include="..\include\unittest_output.h">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test\test_algorithm.h">
+      <Filter>test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
