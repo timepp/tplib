@@ -10,7 +10,6 @@
 
 namespace tp
 {
-
     class cmdline_parser
     {
     public:
@@ -31,7 +30,7 @@ namespace tp
         void register_switch(const wchar_t* short_name, const wchar_t* long_name, bool* value_addr);
 
         /// parse from command line, *MUST* be called after options are registered
-        /// A sample command-line:   
+        /// A sample command-line:
         /// aaa.exe --value=cc -hls -t "c d e" -- -fffc.txt
         void parse(const wchar_t* cmd_line);
         void parse(size_t argc, const wchar_t* const * argv);
@@ -191,7 +190,7 @@ namespace tp
 
     inline void cmdline_parser::parse(const wchar_t* cmd_line)
     {
-        /** If an option value contains spaces, it must be double-quoted.  
+        /** If an option value contains spaces, it must be double-quoted.
          *  Double-quotes in option value is encoded with `\"'.
          */
         strlist_t param_list;
@@ -346,12 +345,12 @@ namespace tp
         }
     }
 
-    std::wstring cmdline_parser::get_string_option(const wchar_t* option, const wchar_t* default_value) const
+    inline std::wstring cmdline_parser::get_string_option(const wchar_t* option, const wchar_t* default_value) const
     {
         const option_info* oi = get_option_info(option);
         return oi? oi->param_value_string : default_value;
     }
-    int cmdline_parser::get_int_option(const wchar_t* option, int default_value) const
+    inline int cmdline_parser::get_int_option(const wchar_t* option, int default_value) const
     {
         const option_info* oi = get_option_info(option);
         if (!oi) return default_value;
@@ -364,7 +363,7 @@ namespace tp
             return tp::cvt::to_int(oi->param_value_string);
         }
     }
-    bool cmdline_parser::get_bool_option(const wchar_t* option, bool default_value) const
+    inline bool cmdline_parser::get_bool_option(const wchar_t* option, bool default_value) const
     {
         const option_info* oi = get_option_info(option);
         if (!oi) return default_value;
@@ -377,7 +376,7 @@ namespace tp
             return tp::cvt::to_bool(oi->param_value_string);
         }
     }
-    bool cmdline_parser::get_switch(const wchar_t* option, bool default_value) const
+    inline bool cmdline_parser::get_switch(const wchar_t* option, bool default_value) const
     {
         return get_bool_option(option, default_value);
     }
@@ -397,6 +396,4 @@ namespace tp
     {
         return index < m_targets.size()? m_targets[index] : L"";
     }
-
-
 } // namespace tp

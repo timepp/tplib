@@ -7,6 +7,7 @@
 #include <test_format_shim.h>
 #include <test_cmdlineparser.h>
 #include <test_service.h>
+#include <util_win.h>
 
 #include <vector>
 

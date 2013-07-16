@@ -125,5 +125,8 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>build</Filter>
     </ClCompile>
+    <ClCompile Include="main2.cpp">
+      <Filter>build</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

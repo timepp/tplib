@@ -20,7 +20,7 @@ private:
 inline void cfgreader::open(std::wstring inifile)
 {
     FILE* fp = NULL;
-    errno_t ret = _wfopen_s(fp, inifile.c_str(), L"rt");
+    errno_t ret = _wfopen_s(&fp, inifile.c_str(), L"rt");
     tp::throw_stderr_when(ret != 0);
     ON_LEAVE_1(fclose(fp), FILE*, fp);
 
@@ -41,8 +41,6 @@ inline void cfgreader::open(std::wstring inifile)
             valmap = &(it->second);
             continue;
         }
-
-
     }
 }
 

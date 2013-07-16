@@ -6,28 +6,6 @@
 
 namespace tp
 {
-    bool is_path_seperator(wchar_t ch)
-    {
-        return ch == L'\\' || ch == L'/';
-    }
-    std::wstring parent_path(const std::wstring& path)
-    {
-        bool has_normal_char = false;
-        for (size_t i = 0; i < path.length(); i++)
-        {
-            size_t pos = path.length() - i - 1;
-            if (!is_path_seperator(path[pos]))
-            {
-                has_normal_char = true;
-            }
-            else if (has_normal_char)
-            {
-                return path.substr(0, pos);
-            }
-        }
-        return L"";
-    }
-
     struct algo
     {
         static unsigned __int32 crc32(const void * buf, size_t len)
