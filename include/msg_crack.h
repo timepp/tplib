@@ -34,7 +34,7 @@ namespace tp
                     // http://stackoverflow.com/questions/10780402/an-exported-aliases-symbol-doesnt-exist-in-pdb-file-registerclipboardformat-ha
                     // from the link above, RegisterWindowMessage and RegisterClipboardFormat share same RVA
                     // in other words, GetClipboardFormatName can be used to retrieve message name registered by RegisterWindowMessage
-                    int len = ::GetClipboardFormatName(message, buffer, buflen);
+                    int len = ::GetClipboardFormatName(message, buffer, static_cast<int>(buflen));
                     buffer[len] = '\0';
                     return buffer;
                 }
