@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{849751AB-31C7-4F6D-A642-180A4A3BC624}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>tplib</RootNamespace>
+    <RootNamespace>tplibtest</RootNamespace>
     <ProjectName>tplibtest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
