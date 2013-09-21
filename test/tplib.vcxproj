@@ -14,6 +14,7 @@
     <ProjectGuid>{849751AB-31C7-4F6D-A642-180A4A3BC624}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>tplib</RootNamespace>
+    <ProjectName>tplibtest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -52,7 +53,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\test;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Wall %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -69,7 +70,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\test;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Wall %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -107,14 +108,14 @@
     <ClInclude Include="..\include\unittest.h" />
     <ClInclude Include="..\include\unittest_output.h" />
     <ClInclude Include="..\include\util_win.h" />
-    <ClInclude Include="..\test\test_algorithm.h" />
-    <ClInclude Include="..\test\test_auto_release.h" />
-    <ClInclude Include="..\test\test_cmdlineparser.h" />
-    <ClInclude Include="..\test\test_format_shim.h" />
-    <ClInclude Include="..\test\test_pinyin.h" />
-    <ClInclude Include="..\test\test_service.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="test_algorithm.h" />
+    <ClInclude Include="test_auto_release.h" />
+    <ClInclude Include="test_cmdlineparser.h" />
+    <ClInclude Include="test_format_shim.h" />
+    <ClInclude Include="test_pinyin.h" />
+    <ClInclude Include="test_service.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

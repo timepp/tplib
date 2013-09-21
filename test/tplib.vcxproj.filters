@@ -1,132 +1,104 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="build">
-      <UniqueIdentifier>{2173d5a9-5fe6-4ae8-b74d-f523566c9c99}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include">
+    <Filter Include="tplib">
       <UniqueIdentifier>{3c972eb1-7edd-424d-8e4e-792ef85529b5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{77050eea-8091-4218-8e7c-2d95d0140d6c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>build</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>build</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\algorithm.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\api_wrapper.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\auto_release.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\cfgreader.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\cmdlineparser.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\composite.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\compositetreectrl.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\convert.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\defs.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\exception.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\format_shim.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\lock.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\log.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\log_context.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\log_device.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\msg_crack.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\opblock.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\oss.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\oss_win.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\pinyin.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\processinfo.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\service.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\tplib.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\tstring.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\unittest.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\util_win.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_pinyin.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_auto_release.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_format_shim.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_cmdlineparser.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_service.h">
-      <Filter>test</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
     <ClInclude Include="..\include\unittest_output.h">
-      <Filter>include</Filter>
+      <Filter>tplib</Filter>
     </ClInclude>
-    <ClInclude Include="..\test\test_algorithm.h">
-      <Filter>test</Filter>
-    </ClInclude>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="test_algorithm.h" />
+    <ClInclude Include="test_auto_release.h" />
+    <ClInclude Include="test_cmdlineparser.h" />
+    <ClInclude Include="test_format_shim.h" />
+    <ClInclude Include="test_pinyin.h" />
+    <ClInclude Include="test_service.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>build</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>build</Filter>
-    </ClCompile>
-    <ClCompile Include="main2.cpp">
-      <Filter>build</Filter>
-    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="main2.cpp" />
+    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
 </Project>
