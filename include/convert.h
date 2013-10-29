@@ -25,6 +25,11 @@ struct cvt
     {
         return to_bool(s.c_str());
     }
+
+    static std::wstring square_quote(const std::wstring& s)
+    {
+        return L"[" + s + L"]";
+    }
 };
 
 
