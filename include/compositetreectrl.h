@@ -197,15 +197,15 @@ namespace tp
 
             CMenu mu;
             mu.CreatePopupMenu();
-            mu.AppendMenu(MF_POPUP, muAdd.m_hMenu, GetMenuItemText(MENUID_ADD_COMP_BEGIN, L"(&A)"));
-            mu.AppendMenu(MF_POPUP, muAddAsParent.m_hMenu, GetMenuItemText(MENUID_ADD_COMP_AS_PARENT_BEGIN, L"(&Q)"));
-            mu.AppendMenu(MF_POPUP, muCvt.m_hMenu, GetMenuItemText(MENUID_CVT_COMP_BEGIN, L"(&S)"));
+            mu.AppendMenu(MF_POPUP, muAdd.m_hMenu, GetMenuItemText(MENUID_ADD_COMP_BEGIN, L""));
+            mu.AppendMenu(MF_POPUP, muAddAsParent.m_hMenu, GetMenuItemText(MENUID_ADD_COMP_AS_PARENT_BEGIN, L""));
+            mu.AppendMenu(MF_POPUP, muCvt.m_hMenu, GetMenuItemText(MENUID_CVT_COMP_BEGIN, L""));
             mu.AppendMenu(MF_SEPARATOR);
-            mu.AppendMenu(MF_STRING, MENUID_COPY, GetMenuItemText(MENUID_COPY, L"(&C)\tCtrl+C"));
-            mu.AppendMenu(MF_STRING, MENUID_CUT, GetMenuItemText(MENUID_CUT, L"(&X)\tCtrl+X"));
-            mu.AppendMenu(MF_STRING, MENUID_PASTE, GetMenuItemText(MENUID_PASTE, L"(&V)\tCtrl+V"));
-            mu.AppendMenu(MF_STRING, MENUID_PASTE_AS_CHILD, GetMenuItemText(MENUID_PASTE_AS_CHILD, L"(&B)"));
-            mu.AppendMenu(MF_STRING, MENUID_DELETE, GetMenuItemText(MENUID_DELETE, L"(&D)\tDel"));
+            mu.AppendMenu(MF_STRING, MENUID_COPY, GetMenuItemText(MENUID_COPY, L"\tCtrl+C"));
+            mu.AppendMenu(MF_STRING, MENUID_CUT, GetMenuItemText(MENUID_CUT, L"\tCtrl+X"));
+            mu.AppendMenu(MF_STRING, MENUID_PASTE, GetMenuItemText(MENUID_PASTE, L"\tCtrl+V"));
+            mu.AppendMenu(MF_STRING, MENUID_PASTE_AS_CHILD, GetMenuItemText(MENUID_PASTE_AS_CHILD, L""));
+            mu.AppendMenu(MF_STRING, MENUID_DELETE, GetMenuItemText(MENUID_DELETE, L"\tDel"));
 
             CTreeItem item = GetSelectedItem();
             component* c = GetItemData(item);
