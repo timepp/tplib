@@ -4,7 +4,14 @@
 #include "lock.h"
 #include "defs.h"
 
-/** \file tplib service框架
+/** \file tplib service framework
+ The tp service framework contains one service manager, a set of other helper classes, and a set of usage rules.
+ The advantage of tp service framework:
+ 1. no cost to get a created service
+ 2. service is created on-demand
+ 3. dependency control: services are created and destroyed in the dependent order
+ 4. cyclic dependency detection
+
  服务管理器管理系统中所有的服务。服务管理器提供统一的服务获取和销毁的入口。
  服务管理器的特点如下：
  1. 获取服务几乎无代价，正常情况下无加锁操作
@@ -13,6 +20,7 @@
  4. 服务创建和销毁时，循环依赖的检测
  5. 解决了系统中singleton满天飞，各自为政，生存期和依赖关系失去控制的局面。
 
+ The search manager manage services allover the system. It provide an unique entry to create or destroy service.
  服务管理器使用一个静态数组保存所有服务的信息, 每个服务都对应一个整型的服务ID,
  服务管理器使用服务ID做为下标，在服务数组中索引服务的相关信息，这使创建服务的开销降到最低。
  服务管理器要求具体服务必须事先显式设置创建和销毁时的依赖关系，这使得服务的创建和销毁变得可控，且可以应用一些检查机制。
