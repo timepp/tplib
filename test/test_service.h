@@ -65,7 +65,7 @@ public:
         use_services(ss, _countof(ss));
     }
 
-    ~testservice()
+    virtual void destroy()
     {
         tp::sid_t ss [] = { dd1, dd2, dd3, du1, du2, du3 };
         use_services(ss, _countof(ss));
@@ -114,6 +114,7 @@ class GlobalTestService : public tp::service_impl<SID_Service1>
     TP_SERVICE_DEFINE_DESTROY_DEPENDENCIES();
 public:
     int getdata() const { return 123; }
+    virtual void destroy() {}
 };
 
 TP_DEFINE_GLOBAL_SERVICE(GlobalTestService, L"xxx");
@@ -149,7 +150,7 @@ TPUT_DEFINE_BLOCK(L"service", L"")
     TPUT_EXPECT(tracestr == L"5 6 4 2 3 1 ", L"依赖的服务能够按顺序正确创建");
     tracestr.clear();
     mgr.destroy_all_services();
-    TPUT_EXPECT(tracestr == L"~3 ~2 ~4 ~5 ~6 ~1 ", L"服务能够按依赖关系正确析构");
+    TPUT_EXPECT(tracestr == L"~3 ~2 ~4 ~5 ~6 ~1 ", L"服务能够按依赖关系正确销毁");
 
     tracestr.clear();
     mgr.clear();
@@ -188,7 +189,7 @@ TPUT_DEFINE_BLOCK(L"service.exception", L"")
     TPUT_EXPECT_EXCEPTION(
         mgr.destroy_all_services(),
         tp::service_out_of_dependency,
-        L"析构时引用了未声明的依赖服务，正确抛异常");
+        L"销毁时引用了未声明的依赖服务，正确抛异常");
 
     mgr.clear();
     mgr.register_service(new testservice<1, 1, 0, 0, 0, 0, 0, 1, 0, 0>::factory(&mgr, NULL));

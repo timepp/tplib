@@ -42,7 +42,7 @@ namespace tp
         {
             std::wstring spliteline(79, L'=');
             wprintf_s(L"\n%s\n%s\n", spliteline.c_str(), spliteline.c_str());
-            wprintf_s(L"Test Complete£¬%d success£¬%d fail\n", succeeded, total - succeeded);
+            wprintf_s(L"Test Completeï¿½ï¿½%d successï¿½ï¿½%d fail\n", succeeded, total - succeeded);
             wprintf_s(L"%s\n", spliteline.c_str());
         }
         virtual void BlockBegin(const TestBlock& block)

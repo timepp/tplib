@@ -27,7 +27,7 @@ namespace tp
         };
         typedef std::map<threadid_t, oplist*> opmap_t;
     public:
-        ~opmgr()
+        virtual void destroy()
         {
             free();
         }
@@ -131,7 +131,6 @@ namespace tp
         }
     };
 
-//    TP_DEFINE_GLOBAL_SERVICE(opmgr, L"²Ù×÷¹ÜÀíÆ÷");
 }
 
 #endif

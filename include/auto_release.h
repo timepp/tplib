@@ -69,27 +69,25 @@ namespace tp
     //! tplib inner class used by TP_SCOPE_EXIT
     class scope_exit_t
     {
-        typedef std::function<void()> func_t;
+        using func_type = std::function<void()>;
 
     public:
-        scope_exit_t(func_t &&f) : func(f) {}
-        ~scope_exit_t() { func(); }
+        // To make scope_exit_t can do direct-initialization with lambda
+        // Otherwise we cannot write like this: scope_exit_t var = [&]() {...}
+        // since this copy-initialization requires 2 implict conversion which is not allowed
+        // https://stackoverflow.com/questions/28875231/initialization-and-lambda-type-argument
 
-    private:
-        // Prohibit construction from lvalues.
-        scope_exit_t(func_t &);
+        template<typename T>
+        scope_exit_t(T&& t) : func(std::move(t)) 
+        { 
+        }
 
-        // Prohibit copying.
-        scope_exit_t(const scope_exit_t&);
-        const scope_exit_t &operator=(const scope_exit_t &);
+        ~scope_exit_t() 
+        { 
+            func(); 
+        }
 
-        // Prohibit new/delete.
-        void *operator new(size_t);
-        void *operator new[](size_t);
-        void operator delete(void *);
-        void operator delete[](void *);
-
-        const func_t func;
+        const func_type func;
     };
 }
 
@@ -97,5 +95,6 @@ namespace tp
  scope guard using C++0x syntax
  */
 #define TP_SCOPE_EXIT tp::scope_exit_t TP_UNIQUE_NAME(tpse_) = [&]()
+//#define TP_SCOPE_EXIT
 
 #endif

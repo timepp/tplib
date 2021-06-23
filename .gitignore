@@ -13,3 +13,4 @@ ipch/
 *.vcproj.*.user
 *.vcxproj.user
 doc/html
+/test/.vs/

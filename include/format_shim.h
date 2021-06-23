@@ -6,10 +6,10 @@
 
 namespace tp
 {
-    /** ¸ñÊ½»¯ÄÚ´æµæÆ¬»ùÀà£ºÒ»¸öÌá¹©ÁËÏò×Ö·ûÖ¸Õë×ª»¯µÄÁÙÊ±¶ÔÏó£¬ÅÉÉú×ÓÀàÒÔ²»Í¬·½Ê½¹¹ÔìÒÔÊµÏÖ²»Í¬µÄ¹¦ÄÜ
-    * »º³åÇø³õÊ¼ÊÇ¿ªÔÚÕ»ÉÏµÄ£¬µ±Õ»ÉÏµÄ»º³åÇø²»Âú×ãĞèÒªÊ±£¬¾Í»áÖØĞÂ´Ó¶ÑÉÏ·ÖÅäÄÚ´æ
-    * Ò»°ãÀ´Ëµ×ÓÀàÔÚ¹¹Ôìº¯ÊıÀïÌî³äm_buf. ×ÓÀàĞèÓÃÊµ¼ÊµÄ¿Õ¼ä´óĞ¡µ÷ÓÃresize.
-    * \note ¸ñÊ½»¯ÄÚ´æµæÆ¬ÔÚÓÃ×÷¿É±ä²ÎÊıÁĞ±íÖĞµÄ²ÎÊıÊ±£¬×îºÃÏÈÏÔÊ½×ª»»³Éconst T*£¬»òÕßÔÚÁÙÊ±¶ÔÏóÇ°¼Ó&
+    /** æ ¼å¼åŒ–å†…å­˜å«ç‰‡åŸºç±»ï¼šä¸€ä¸ªæä¾›äº†å‘å­—ç¬¦æŒ‡é’ˆè½¬åŒ–çš„ä¸´æ—¶å¯¹è±¡ï¼Œæ´¾ç”Ÿå­ç±»ä»¥ä¸åŒæ–¹å¼æ„é€ ä»¥å®ç°ä¸åŒçš„åŠŸèƒ½
+    * ç¼“å†²åŒºåˆå§‹æ˜¯å¼€åœ¨æ ˆä¸Šçš„ï¼Œå½“æ ˆä¸Šçš„ç¼“å†²åŒºä¸æ»¡è¶³éœ€è¦æ—¶ï¼Œå°±ä¼šé‡æ–°ä»å †ä¸Šåˆ†é…å†…å­˜
+    * ä¸€èˆ¬æ¥è¯´å­ç±»åœ¨æ„é€ å‡½æ•°é‡Œå¡«å……m_buf. å­ç±»éœ€ç”¨å®é™…çš„ç©ºé—´å¤§å°è°ƒç”¨resize.
+    * \note æ ¼å¼åŒ–å†…å­˜å«ç‰‡åœ¨ç”¨ä½œå¯å˜å‚æ•°åˆ—è¡¨ä¸­çš„å‚æ•°æ—¶ï¼Œæœ€å¥½å…ˆæ˜¾å¼è½¬æ¢æˆconst T*ï¼Œæˆ–è€…åœ¨ä¸´æ—¶å¯¹è±¡å‰åŠ &
     */
     template <typename T, size_t size>
     class format_shim
@@ -58,7 +58,7 @@ namespace tp
     };
 
 
-    // cfmt ÒÔprintfÓï·¨¸ñÊ½»¯×Ö·û´®
+    // cfmt ä»¥printfè¯­æ³•æ ¼å¼åŒ–å­—ç¬¦ä¸²
     template <typename T, size_t buf_size = 1024>
     class cfmt : public format_shim<T, buf_size>
     {
@@ -68,12 +68,12 @@ namespace tp
             va_list args;
             va_start(args, fmt);
 
-            resize(static_cast<size_t>(aw::_vscprintf(fmt, args) + 1));
-            aw::vsnprintf_s(m_buf, m_buf_size, fmt, args);
+            this->resize(static_cast<size_t>(aw::_vscprintf(fmt, args) + 1));
+            aw::vsnprintf_s(this->m_buf, this->m_buf_size, fmt, args);
         }
     };
 
-    // hex_dumper °ÑÄÚ´æÄÚÈİdump³É¿É¶Á°æ±¾
+    // hex_dumper æŠŠå†…å­˜å†…å®¹dumpæˆå¯è¯»ç‰ˆæœ¬
     template <typename T, size_t buf_size = 1024>
     class hex_dumper : public format_shim<T, buf_size>
     {
@@ -82,8 +82,8 @@ namespace tp
         {
             const size_t line_size = get_line_size(bytes_per_line, indent);
             size_t line_count = (len + bytes_per_line - 1) / bytes_per_line;
-            resize(line_size * line_count + 1);
-            _hex_dump(m_buf, data, len, indent, bytes_per_line);
+            this->resize(line_size * line_count + 1);
+            _hex_dump(this->m_buf, data, len, indent, bytes_per_line);
         }
 
     private:
@@ -130,7 +130,7 @@ namespace tp
         }
     };
 
-    /** err_desc»ñÈ¡ÏµÍ³´íÎóÃèÊö 
+    /** err_descè·å–ç³»ç»Ÿé”™è¯¯æè¿° 
     */
     template <typename T, size_t buf_size = 1024>
     class ed_win : public tp::format_shim<T, buf_size>
@@ -156,18 +156,18 @@ namespace tp
                 reinterpret_cast<T*>(&msg),
                 0,
                 NULL);
-            resize(len + 1);
+            this->resize(len + 1);
             if (len > 0)
             {
                 for (T* p = msg + len; p > msg && (*p == '\0' || *p == '\r' || *p == '\n'); p--)
                 {
                     *p = '\0';
                 }
-                tp::aw::strncpy_s(m_buf, m_buf_size, msg, _TRUNCATE);
+                tp::aw::strncpy_s(this->m_buf, this->m_buf_size, msg, _TRUNCATE);
             }
             else
             {
-                m_buf[0] = 0;
+                this->m_buf[0] = 0;
             }
             ::LocalFree(msg);
         }
@@ -177,7 +177,7 @@ namespace tp
     class ed_com : public ed_win<T, buf_size>
     {
     public:
-        explicit ed_com(HRESULT hr) : ed_win(static_cast<DWORD>(hr))
+        explicit ed_com(HRESULT hr) : ed_win<T, buf_size>(static_cast<DWORD>(hr))
         {
         }
     };
@@ -198,9 +198,9 @@ namespace tp
     private:
         void build_desc(int err_code)
         {
-            // ÎŞ·¨ÕıÃæµÃµ½¸ñÊ½»¯´íÎóËùĞèµÄ»º³åÇø´óĞ¡£¬ÕâÀïÆÚÍû²»´óÓÚ128
-            resize(128);
-            tp::aw::strerror_s(m_buf, m_buf_size, err_code);
+            // æ— æ³•æ­£é¢å¾—åˆ°æ ¼å¼åŒ–é”™è¯¯æ‰€éœ€çš„ç¼“å†²åŒºå¤§å°ï¼Œè¿™é‡ŒæœŸæœ›ä¸å¤§äº128
+            this->resize(128);
+            tp::aw::strerror_s(this->m_buf, this->m_buf_size, err_code);
         }
     };
 
@@ -211,8 +211,8 @@ namespace tp
         mb_to_w(const char* str, unsigned int cp = 0)
         {
             int size_req = ::MultiByteToWideChar(cp, 0, str, -1, NULL, 0);
-            resize(static_cast<size_t>(size_req));
-            ::MultiByteToWideChar(cp, 0, str, -1, m_buf, size_req);
+            this->resize(static_cast<size_t>(size_req));
+            ::MultiByteToWideChar(cp, 0, str, -1, this->m_buf, size_req);
         }
     };
 
@@ -223,8 +223,8 @@ namespace tp
         w_to_mb(const wchar_t* str, unsigned int cp = 0)
         {
             int size_req = ::WideCharToMultiByte(cp, 0, str, -1, NULL, 0, NULL, NULL);
-            resize(static_cast<size_t>(size_req));
-            ::WideCharToMultiByte(cp, 0, str, -1, m_buf, size_req, NULL, NULL);
+            this->resize(static_cast<size_t>(size_req));
+            ::WideCharToMultiByte(cp, 0, str, -1, this->m_buf, size_req, NULL, NULL);
         }
     };
 

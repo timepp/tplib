@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <list>
+#include <stdexcept>
 #include "lock.h"
 #include "defs.h"
 
@@ -172,12 +173,6 @@ namespace tp
         };
     };
 
-    template <typename T>
-    T* global_service()
-    {
-        return global_servicemgr().get_service<T>();
-    }
-
     inline servicemgr& global_servicemgr()
     {
 #pragma warning(push)
@@ -185,6 +180,12 @@ namespace tp
         static servicemgr mgr;
 #pragma warning(pop)
         return mgr;
+    }
+
+    template <typename T>
+    T* global_service()
+    {
+        return global_servicemgr().get_service<T>();
     }
 
     class refcounter
@@ -209,6 +210,8 @@ namespace tp
     public:
         virtual int addref();
         virtual int release();
+        // 服务需要在destroy中做清理工作, 不能在析构函数中做清理操作
+        virtual void destroy() = 0;
     public:
         enum {service_id = sid};
     };
@@ -520,7 +523,11 @@ namespace tp
     inline int service_impl<sid>::release()
     {
         int ref = m_ref.release();
-        if (ref == 0) delete this;
+        if (ref == 0)
+        {
+            destroy();
+            delete this;
+        }
         return ref;
     }
 }
